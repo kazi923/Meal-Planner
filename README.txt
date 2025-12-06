@@ -1,0 +1,1 @@
+Open index.html in a mobile browser or desktop. Data is stored locally in your browser's localStorage. No server required.
