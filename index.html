@@ -99,9 +99,27 @@
   <div id="shoppingItems" class="shopping-list"></div>
 </div>
 <script>
-let meals = JSON.parse(localStorage.getItem('meals') || '[]');
+// Default starter dinner meals bundled with the app
+const defaultMeals = [
+  { name:"Spaghetti Bolognese", items:"Pasta, Minced Beef, Tomato Sauce, Garlic, Onion", cat:"Dinner" },
+  { name:"Grilled Salmon", items:"Salmon Fillet, Lemon, Olive Oil, Herbs", cat:"Dinner" },
+  { name:"Chicken Curry", items:"Chicken, Curry Paste, Coconut Milk, Rice", cat:"Dinner" },
+  { name:"Vegetable Stir Fry", items:"Broccoli, Carrots, Peppers, Soy Sauce, Noodles", cat:"Dinner" },
+  { name:"Beef Tacos", items:"Taco Shells, Beef, Lettuce, Tomato, Cheese", cat:"Dinner" },
+  { name:"Margherita Pizza", items:"Pizza Base, Tomato Sauce, Mozzarella, Basil", cat:"Dinner" },
+  { name:"Shepherd’s Pie", items:"Minced Lamb, Potatoes, Carrots, Peas, Gravy", cat:"Dinner" }
+];
+
+// Load meals from localStorage, or fall back to defaults if empty
+let meals = JSON.parse(localStorage.getItem('meals') || 'null');
+if (!meals || meals.length === 0) {
+  meals = defaultMeals;
+  localStorage.setItem('meals', JSON.stringify(meals));
+}
+
+// Weekly plan still loads from localStorage
 let plan  = JSON.parse(localStorage.getItem('plan')  || '[]');
-let manualSelected = new Set(); // holds meal names chosen on Manual Selection page
+let manualSelected = new Set();
 
 function save() {
   localStorage.setItem('meals', JSON.stringify(meals));
@@ -222,16 +240,16 @@ function renderPlan() {
   }
 
   const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-used.forEach((m,i) => {
-  const d = document.createElement('div');
-  d.className = 'card';
-  d.innerHTML = `
-    <span class="day-label">${days[i]}</span>
-    <input type="checkbox" onchange="toggleLock(${i})" ${m.locked?'checked':''}>
-    <strong onclick="toggleRecipe('planr${i}')">${m.name}</strong> (${m.cat})
-    <div id="planr${i}" class="recipe">${m.items}</div>`;
-  l.appendChild(d);
-});
+  used.forEach((m,i) => {
+    const d = document.createElement('div');
+    d.className = 'card';
+    d.innerHTML = `
+      <span class="day-label">${days[i]}</span>
+      <input type="checkbox" onchange="toggleLock(${i})" ${m.locked?'checked':''}>
+      <strong onclick="toggleRecipe('planr${i}')">${m.name}</strong> (${m.cat})
+      <div id="planr${i}" class="recipe">${m.items}</div>`;
+    l.appendChild(d);
+  });
 
   document.getElementById('createListBtn').style.display =
     (used.length === 7) ? 'block' : 'none';
@@ -248,7 +266,7 @@ function toggleLock(i) {
 function renderManualList() {
   const l = document.getElementById('manualList');
   l.innerHTML = '';
-  const validMeals = meals.filter(m => m && m.name && m.items); // only show real meals
+  const validMeals = meals.filter(m => m && m.name && m.items);
 
   if (validMeals.length === 0) {
     l.innerHTML = '<div class="card empty">No meals added yet. Add some meals first.</div>';
