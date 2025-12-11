@@ -7,24 +7,42 @@
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body{margin:0;font-family:Poppins,sans-serif;background:linear-gradient(160deg,#2ec5ce 0%,#f45d69 100%);color:#fff}
-    h2{text-align:center;margin:20px 0}
-    .page{display:none;padding:20px;max-width:760px;margin:0 auto}
-    .active{display:block}
-    .btn{display:block;width:90%;margin:12px auto;padding:14px 18px;border:none;border-radius:14px;font-size:18px;font-weight:600;cursor:pointer;text-align:center;color:#fff}
-    .btn-yellow{background:#ffcc4d;color:#473c00}.btn-green{background:#55d685}.btn-pink{background:#ff7da6}.btn-blue{background:#5aa9ff}
-    .inputs{display:grid;gap:10px;margin-bottom:8px}
-    .inputs input,.inputs select{padding:12px;border-radius:12px;border:2px solid #e6eef2;font-size:16px;color:#153243}
-    .button-row{display:flex;justify-content:center;gap:16px;margin:12px 0}
-    .card{background:#fff;color:#153243;border-radius:14px;padding:12px;margin:10px 0}
-    .title{font-weight:600;cursor:pointer}
-    .recipe{display:none;margin-top:6px;font-style:italic;color:#2a4158}
-    .tool-btn{background:#eee;border:none;border-radius:8px;padding:6px 10px;margin-left:6px;cursor:pointer}
-    .shopping-list{background:#fff;color:#153243;border-radius:14px;padding:16px}
-    .empty{opacity:.8;font-style:italic}
+    body {
+      margin:0;
+      font-family:Poppins,sans-serif;
+      background:linear-gradient(160deg,#2ec5ce 0%,#f45d69 100%);
+      color:#fff;
+    }
+    h2 { text-align:center; margin:20px 0 }
+    .page { display:none; padding:20px; max-width:760px; margin:0 auto }
+    .active { display:block }
+    .btn {
+      display:block; width:90%; margin:12px auto; padding:14px 18px;
+      border:none; border-radius:14px; font-size:18px; font-weight:600;
+      cursor:pointer; text-align:center; color:#fff;
+    }
+    .btn-yellow { background:#ffcc4d; color:#473c00 }
+    .btn-green { background:#55d685 }
+    .btn-pink { background:#ff7da6 }
+    .btn-blue { background:#5aa9ff }
+    .inputs { display:grid; gap:10px; margin-bottom:8px }
+    .inputs input,.inputs select {
+      padding:12px; border-radius:12px; border:2px solid #e6eef2;
+      font-size:16px; color:#153243;
+    }
+    .button-row { display:flex; justify-content:center; gap:16px; margin:12px 0 }
+    .card { background:#fff; color:#153243; border-radius:14px; padding:12px; margin:10px 0 }
+    .title { font-weight:600; cursor:pointer }
+    .recipe { display:none; margin-top:6px; font-style:italic; color:#2a4158 }
+    .tool-btn { background:#eee; border:none; border-radius:8px; padding:6px 10px; margin-left:6px; cursor:pointer }
+    .shopping-list { background:#fff; color:#153243; border-radius:14px; padding:16px }
+    .empty { opacity:.8; font-style:italic }
+    .day-label { font-weight:600; margin-right:8px; display:inline-block; width:40px }
   </style>
 </head>
 <body>
+
+<!-- Home Page -->
 <div id="home" class="page active">
   <h2>Meal Planner</h2>
   <button class="btn btn-yellow" onclick="nav('planner')">🍽️ Meal Planner</button>
@@ -32,13 +50,19 @@
   <button class="btn btn-pink" onclick="nav('shop')">🛒 Shopping List</button>
 </div>
 
+<!-- Planner Page -->
 <div id="planner" class="page">
   <button class="btn btn-green" onclick="nav('home')">🏠 Home</button>
   <h2>Meal Planner</h2>
   <div class="inputs">
     <input id="mealName" placeholder="Meal name"/>
     <input id="mealItems" placeholder="Recipe items (comma separated)"/>
-    <select id="mealCategory"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select>
+    <select id="mealCategory">
+      <option>Breakfast</option>
+      <option>Lunch</option>
+      <option>Dinner</option>
+      <option>Snack</option>
+    </select>
   </div>
   <div class="button-row">
     <button class="btn btn-blue" onclick="addMeal()">➕ Add Meal</button>
@@ -46,98 +70,135 @@
   </div>
   <div id="mealList"></div>
 </div>
-
+<!-- 7 Day Meal Planner Page -->
 <div id="seven" class="page">
   <button class="btn btn-green" onclick="nav('home')">🏠 Home</button>
   <h2>7 Day Meal Planner</h2>
   <button class="btn btn-yellow" onclick="shufflePlan()">🔀 Shuffle Plan</button>
+  <button class="btn btn-blue" onclick="nav('manual')">📝 Manually Select Meals</button>
   <div id="sevenList"></div>
-  <button id="createListBtn" class="btn btn-pink" style="display:none;" onclick="nav('shop')">🛒 Create Shopping List</button>
+  <button id="createListBtn" class="btn btn-pink" style="display:none;" onclick="nav('shop')">
+    🛒 Create Shopping List
+  </button>
 </div>
 
+<!-- Manual Selection Page -->
+<div id="manual" class="page">
+  <button class="btn btn-green" onclick="nav('seven')">⬅️ Back to 7 Day Planner</button>
+  <h2>Manually Select Meals</h2>
+  <div id="manualList"></div>
+  <button id="applyManualBtn" class="btn btn-yellow" style="display:none;" onclick="applyManualSelection()">
+    ✅ Apply Selected Meals
+  </button>
+</div>
+
+<!-- Shopping List Page -->
 <div id="shop" class="page">
   <button class="btn btn-green" onclick="nav('home')">🏠 Home</button>
   <h2>Shopping List</h2>
   <div id="shoppingItems" class="shopping-list"></div>
 </div>
 <script>
-let meals=JSON.parse(localStorage.getItem('meals')||'[]');
-let plan=JSON.parse(localStorage.getItem('plan')||'[]');
+let meals = JSON.parse(localStorage.getItem('meals') || '[]');
+let plan  = JSON.parse(localStorage.getItem('plan')  || '[]');
+let manualSelected = new Set(); // holds meal names chosen on Manual Selection page
 
-function save(){
-  localStorage.setItem('meals',JSON.stringify(meals));
-  localStorage.setItem('plan',JSON.stringify(plan));
+function save() {
+  localStorage.setItem('meals', JSON.stringify(meals));
+  localStorage.setItem('plan',  JSON.stringify(plan));
 }
 
-function nav(p){
-  document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));
+function nav(p) {
+  document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
   document.getElementById(p).classList.add('active');
-  if(p==='planner') renderMeals();
-  if(p==='seven')   renderPlan();
-  if(p==='shop')    renderShoppingList();
+  if (p === 'planner') renderMeals();
+  if (p === 'seven')   renderPlan();
+  if (p === 'shop')    renderShoppingList();
+  if (p === 'manual')  renderManualList();
 }
 
-function addMeal(){
-  const n=document.getElementById('mealName').value.trim();
-  const i=document.getElementById('mealItems').value.trim();
-  const c=document.getElementById('mealCategory').value;
-  if(!n||!i){alert('Enter meal name and items');return;}
-  meals.push({name:n,items:i,cat:c});
-  save();renderMeals();
-  document.getElementById('mealName').value='';
-  document.getElementById('mealItems').value='';
+function addMeal() {
+  const n = document.getElementById('mealName').value.trim();
+  const i = document.getElementById('mealItems').value.trim();
+  const c = document.getElementById('mealCategory').value;
+  if (!n || !i) { alert('Enter meal name and items'); return; }
+  meals.push({ name:n, items:i, cat:c });
+  save();
+  renderMeals();
+  document.getElementById('mealName').value = '';
+  document.getElementById('mealItems').value = '';
 }
 
-function renderMeals(){
-  const l=document.getElementById('mealList');l.innerHTML='';
-  // ✅ FIX: only render actual meals, no empty slots
-  meals.filter(m=>m && m.name && m.items).forEach((m,x)=>{
-    const d=document.createElement('div');d.className='card';
-    d.innerHTML=`<strong onclick="toggleRecipe('r${x}')">${m.name}</strong> (${m.cat})
-    <div id="r${x}" class="recipe">${m.items}</div>
-    <button class="tool-btn" onclick="editMeal(${x})">✏️ Edit</button>
-    <button class="tool-btn" onclick="deleteMeal(${x})">🗑️ Delete</button>`;
+function renderMeals() {
+  const l = document.getElementById('mealList');
+  l.innerHTML = '';
+  meals.filter(m => m && m.name && m.items).forEach((m,x) => {
+    const d = document.createElement('div');
+    d.className = 'card';
+    d.innerHTML = `
+      <strong onclick="toggleRecipe('r${x}')">${m.name}</strong> (${m.cat})
+      <div id="r${x}" class="recipe">${m.items}</div>
+      <button class="tool-btn" onclick="editMeal(${x})">✏️ Edit</button>
+      <button class="tool-btn" onclick="deleteMeal(${x})">🗑️ Delete</button>`;
     l.appendChild(d);
   });
 }
 
-function toggleRecipe(id){
-  const e=document.getElementById(id);
-  if(e) e.style.display=(e.style.display==='block'?'none':'block');
+function toggleRecipe(id) {
+  const e = document.getElementById(id);
+  if (e) e.style.display = (e.style.display === 'block' ? 'none' : 'block');
 }
 
-function editMeal(i){
-  const m=meals[i];
-  const n=prompt("Edit meal name:",m.name);if(n===null)return;
-  const it=prompt("Edit recipe items:",m.items);if(it===null)return;
-  const c=prompt("Edit category:",m.cat);if(c===null)return;
-  meals[i]={name:n.trim(),items:it.trim(),cat:c.trim()};
-  plan=plan.map(p=>p&&p.name===m.name?{...p,name:n.trim(),items:it.trim(),cat:c.trim(),locked:p.locked}:p);
-  save();renderMeals();renderPlan();
+function editMeal(i) {
+  const m = meals[i];
+  const n  = prompt("Edit meal name:", m.name);   if (n  === null) return;
+  const it = prompt("Edit recipe items:", m.items); if (it === null) return;
+  const c  = prompt("Edit category:", m.cat);     if (c  === null) return;
+
+  meals[i] = { name:n.trim(), items:it.trim(), cat:c.trim() };
+  plan = plan.map(p => p && p.name === m.name
+    ? { ...p, name:n.trim(), items:it.trim(), cat:c.trim(), locked:p.locked }
+    : p);
+
+  if (manualSelected.has(m.name)) {
+    manualSelected.delete(m.name);
+    manualSelected.add(n.trim());
+  }
+
+  save();
+  renderMeals();
+  renderPlan();
+  renderManualList();
 }
 
-function deleteMeal(i){
-  const m=meals[i];if(!confirm("Delete this meal?"))return;
+function deleteMeal(i) {
+  const m = meals[i];
+  if (!confirm("Delete this meal?")) return;
   meals.splice(i,1);
-  plan=plan.filter(p=>p&&p.name!==m.name);
-  save();renderMeals();renderPlan();
-  document.getElementById('createListBtn').style.display=(plan.filter(Boolean).length===7)?'block':'none';
-}
+  plan = plan.filter(p => p && p.name !== m.name);
+  if (manualSelected.has(m.name)) manualSelected.delete(m.name);
 
-function shufflePlan(){
-  if(!meals.length){
+  save();
+  renderMeals();
+  renderPlan();
+  renderManualList();
+
+  document.getElementById('createListBtn').style.display =
+    (plan.filter(Boolean).length === 7) ? 'block' : 'none';
+}
+function shufflePlan() {
+  if (!meals.length) {
     alert('Add some meals first');
     return;
   }
   const locked = plan.filter(m => m && m.locked);
-  const need = 7 - locked.length;
+  const need   = 7 - locked.length;
   const chosen = [];
 
-  while(chosen.length < need){
-    const idx = Math.floor(Math.random() * meals.length);
-    const pick = {...meals[idx], locked:false};
-    // ✅ FIX: only add if pick is valid and not already chosen
-    if(pick && pick.name && !locked.concat(chosen).some(m => m.name === pick.name)){
+  while (chosen.length < need) {
+    const idx  = Math.floor(Math.random() * meals.length);
+    const pick = { ...meals[idx], locked:false };
+    if (pick && pick.name && !locked.concat(chosen).some(m => m.name === pick.name)) {
       chosen.push(pick);
     }
   }
@@ -145,81 +206,128 @@ function shufflePlan(){
   plan = [...locked, ...chosen].slice(0,7);
   save();
   renderPlan();
-  document.getElementById('createListBtn').style.display = (plan.filter(Boolean).length===7)?'block':'none';
+  document.getElementById('createListBtn').style.display =
+    (plan.filter(Boolean).length === 7) ? 'block' : 'none';
 }
 
-function renderPlan(){
+function renderPlan() {
   const l = document.getElementById('sevenList');
   l.innerHTML = '';
-  const used = plan.filter(m => m && m.name && m.items); // ✅ FIX: filter out undefined
+  const used = plan.filter(m => m && m.name && m.items);
 
-  if(used.length === 0){
-    l.innerHTML = '<div class="card empty">No meals in the weekly plan yet. Use Shuffle plan to add some.</div>';
+  if (used.length === 0) {
+    l.innerHTML = '<div class="card empty">No meals in the weekly plan yet. Use Shuffle plan or Manual Select.</div>';
     document.getElementById('createListBtn').style.display = 'none';
     return;
   }
 
-  used.forEach((m,i)=>{
+  const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  used.forEach((m,i) => {
     const d = document.createElement('div');
     d.className = 'card';
-    d.innerHTML = `<label><input type="checkbox" onchange="toggleLock(${i})" ${m.locked?'checked':''}> Lock</label>
-    <strong onclick="toggleRecipe('planr${i}')">${m.name}</strong> (${m.cat})
-    <div id="planr${i}" class="recipe">${m.items}</div>`;
+    d.innerHTML = `
+      <span class="day-label">${days[i]}</span>
+      <label><input type="checkbox" onchange="toggleLock(${i})" ${m.locked?'checked':''}> Lock</label>
+      <strong onclick="toggleRecipe('planr${i}')">${m.name}</strong> (${m.cat})
+      <div id="planr${i}" class="recipe">${m.items}</div>`;
     l.appendChild(d);
   });
 
-  document.getElementById('createListBtn').style.display = (used.length===7)?'block':'none';
+  document.getElementById('createListBtn').style.display =
+    (used.length === 7) ? 'block' : 'none';
 }
-function renderPlan(){
-  const l=document.getElementById('sevenList');l.innerHTML='';
-  const used=plan.filter(Boolean);
-  if(used.length===0){
-    l.innerHTML='<div class="card empty">No meals in the weekly plan yet. Use Shuffle plan to add some.</div>';
-    document.getElementById('createListBtn').style.display='none';
+
+function toggleLock(i) {
+  if (plan[i]) {
+    plan[i].locked = !plan[i].locked;
+    save();
+  }
+}
+
+// Manual Selection Page
+function renderManualList() {
+  const l = document.getElementById('manualList');
+  l.innerHTML = '';
+  const validMeals = meals.filter(m => m && m.name && m.items); // only show real meals
+
+  if (validMeals.length === 0) {
+    l.innerHTML = '<div class="card empty">No meals added yet. Add some meals first.</div>';
     return;
   }
-  used.forEach((m,i)=>{
-    const d=document.createElement('div');d.className='card';
-    d.innerHTML=`<label><input type="checkbox" onchange="toggleLock(${i})" ${m.locked?'checked':''}> Lock</label>
-    <strong onclick="toggleRecipe('planr${i}')">${m.name}</strong> (${m.cat})
-    <div id="planr${i}" class="recipe">${m.items}</div>`;
+
+  validMeals.forEach((m) => {
+    const d = document.createElement('div');
+    d.className = 'card';
+    const checked = manualSelected.has(m.name) ? 'checked' : '';
+    d.innerHTML = `
+      <label>
+        <input type="checkbox" onchange="toggleManual('${m.name}')" ${checked}>
+        ${m.name} (${m.cat})
+      </label>
+      <div class="recipe">${m.items}</div>`;
     l.appendChild(d);
   });
-  document.getElementById('createListBtn').style.display=(used.length===7)?'block':'none';
+
+  document.getElementById('applyManualBtn').style.display =
+    (manualSelected.size === 7) ? 'block' : 'none';
 }
 
-function toggleLock(i){
-  if(plan[i]){plan[i].locked=!plan[i].locked;save();}
+function toggleManual(name) {
+  if (manualSelected.has(name)) {
+    manualSelected.delete(name);
+  } else {
+    if (manualSelected.size >= 7) {
+      alert("You can only select 7 meals.");
+      return;
+    }
+    manualSelected.add(name);
+  }
+  renderManualList();
 }
-function renderShoppingList(){
-  const items=new Map();
-  plan.forEach(m=>{
-    if(!m || !m.items) return;
-    m.items.split(',').map(s=>s.trim()).filter(Boolean).forEach(it=>{
-      const k=it.toLowerCase();
-      items.set(k,(items.get(k)||0)+1);
+
+function applyManualSelection() {
+  if (manualSelected.size !== 7) {
+    alert("Please select exactly 7 meals.");
+    return;
+  }
+  plan = meals.filter(m => manualSelected.has(m.name)).map(m => ({...m, locked:false}));
+  save();
+  nav('seven');
+}
+
+// Shopping List
+function renderShoppingList() {
+  const items = new Map();
+  plan.forEach(m => {
+    if (!m || !m.items) return;
+    m.items.split(',').map(s => s.trim()).filter(Boolean).forEach(it => {
+      const k = it.toLowerCase();
+      items.set(k, (items.get(k) || 0) + 1);
     });
   });
-  const l=document.getElementById('shoppingItems');l.innerHTML='';
-  if(items.size===0){
-    l.innerHTML='<div class="card empty">No items yet. Fill your weekly plan first.</div>';
+
+  const l = document.getElementById('shoppingItems');
+  l.innerHTML = '';
+  if (items.size === 0) {
+    l.innerHTML = '<div class="card empty">No items yet. Fill your weekly plan first.</div>';
     return;
   }
-  Array.from(items.keys()).sort().forEach(k=>{
-    const pretty=k.replace(/\b\w/g,c=>c.toUpperCase());
-    const d=document.createElement('div');
-    d.innerHTML=`<input type="checkbox"> ${pretty}`;
+
+  Array.from(items.keys()).sort().forEach(k => {
+    const pretty = k.replace(/\b\w/g, c => c.toUpperCase());
+    const d = document.createElement('div');
+    d.innerHTML = `<input type="checkbox"> ${pretty}`;
     l.appendChild(d);
   });
 }
 
 // Register service worker
-if('serviceWorker' in navigator){
+if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('service-worker.js').catch(()=>{});
 }
 
 // Init
-window.onload=()=>{renderMeals();renderPlan();};
+window.onload = () => { renderMeals(); renderPlan(); };
 </script>
 </body>
 </html>

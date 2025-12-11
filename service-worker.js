@@ -1,4 +1,4 @@
-const CACHE_NAME = "meal-planner-v1";
+const CACHE_NAME = "meal-planner-v2";
 const FILES_TO_CACHE = [
   "index.html",
   "manifest.json",
@@ -16,7 +16,9 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.map((key) => (key !== CACHE_NAME ? caches.delete(key) : null)))
+      Promise.all(
+        keys.map((key) => (key !== CACHE_NAME ? caches.delete(key) : null))
+      )
     )
   );
   self.clients.claim();
