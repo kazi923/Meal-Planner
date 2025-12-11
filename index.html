@@ -222,16 +222,16 @@ function renderPlan() {
   }
 
   const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  used.forEach((m,i) => {
-    const d = document.createElement('div');
-    d.className = 'card';
-    d.innerHTML = `
-      <span class="day-label">${days[i]}</span>
-      <label><input type="checkbox" onchange="toggleLock(${i})" ${m.locked?'checked':''}> Lock</label>
-      <strong onclick="toggleRecipe('planr${i}')">${m.name}</strong> (${m.cat})
-      <div id="planr${i}" class="recipe">${m.items}</div>`;
-    l.appendChild(d);
-  });
+used.forEach((m,i) => {
+  const d = document.createElement('div');
+  d.className = 'card';
+  d.innerHTML = `
+    <span class="day-label">${days[i]}</span>
+    <input type="checkbox" onchange="toggleLock(${i})" ${m.locked?'checked':''}>
+    <strong onclick="toggleRecipe('planr${i}')">${m.name}</strong> (${m.cat})
+    <div id="planr${i}" class="recipe">${m.items}</div>`;
+  l.appendChild(d);
+});
 
   document.getElementById('createListBtn').style.display =
     (used.length === 7) ? 'block' : 'none';
