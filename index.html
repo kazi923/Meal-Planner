@@ -272,6 +272,12 @@ function saveShoppingState() {
   localStorage.setItem('clearedShopping', JSON.stringify(Array.from(clearedShopping)));
   localStorage.setItem('checkedShopping', JSON.stringify(Array.from(checkedShopping)));
 }
+
+/* Temporary-clear helper: reset cleared items when plan changes */
+function resetClearedShopping() {
+  clearedShopping.clear();
+  saveShoppingState();
+}
 /* ======= Navigation and helpers ===== */
 function nav(p) {
   document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
@@ -365,12 +371,14 @@ function editMeal(index) {
   save();
   renderMeals();
 
+  // Update any plan entries that referenced the old meal
   plan = plan.map(p => {
     if (!p) return p;
     const same = (p.name === m.name && p.items === m.items);
     return same ? { ...p, name, items, cat } : p;
   });
   save();
+  resetClearedShopping(); // plan changed -> restore cleared items
   renderPlan();
 }
 
@@ -389,6 +397,7 @@ function deleteMeal(index) {
   });
 
   save();
+  resetClearedShopping(); // plan changed -> restore cleared items
   renderMeals();
   renderPlan();
 }
@@ -476,6 +485,7 @@ function applyManualSelection() {
 
   manualSelected.clear();
   save();
+  resetClearedShopping(); // plan changed -> restore cleared items
   renderManualList();
   renderPlan();
   const applyBtn = document.getElementById('applyManualBtn');
@@ -504,6 +514,7 @@ function shufflePlan() {
   }
   plan = newPlan;
   save();
+  resetClearedShopping(); // plan changed -> restore cleared items
   renderPlan();
   const createBtn = document.getElementById('createListBtn');
   if (createBtn) createBtn.style.display = (plan.filter(Boolean).length === 7) ? 'block' : 'none';
@@ -639,7 +650,9 @@ function renderShoppingList() {
 
   const entries = Array.from(seen.entries()).sort((a,b) => a[1].localeCompare(b[1]));
   entries.forEach(([key, pretty]) => {
+    // If user temporarily cleared this item for current plan, skip it
     if (clearedShopping.has(key)) return;
+
     const d = document.createElement('div');
     d.className = 'shopping-item';
     d.style.display = 'flex';
@@ -706,6 +719,7 @@ function renderShoppingList() {
 
     clearBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      // Temporarily clear this item for the current plan
       clearedShopping.add(key);
       if (checkedShopping.has(key)) checkedShopping.delete(key);
       saveShoppingState();
