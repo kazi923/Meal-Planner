@@ -4,181 +4,32 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <title>Meal Planner</title>
+
+  <!-- Manifest + Icons -->
   <link rel="manifest" href="manifest.json">
+
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-:root{
-  --bg-start:#1e90ff;
-  --bg-end:#0000cd;
-  --card-bg:#ffffff;
-  --card-ink:#153243;
-  --muted:#6b7b88;
-  --gap:12px;
-  --radius:12px;
-  --btn-padding:14px;
-}
 
-/* Base */
-html,body{height:100%}
-body {
-  margin:0;
-  font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
-  background:linear-gradient(160deg,var(--bg-start) 0%,var(--bg-end) 100%);
-  color:#fff;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  box-sizing:border-box;
-}
-
-/* Ensure page headings are centered and consistent */
-.page > h2 {
-  text-align: center;
-  margin: 14px 12px;
-  font-size: 1.25rem;
-  line-height: 1.2;
-  width: 100%;
-  box-sizing: border-box;
-}
-.page > button + h2 { margin-top: 10px; }
-@media (max-width:420px) { .page > h2 { font-size: 1.05rem; margin: 10px 10px; } }
-
-/* Layout containers */
-.page {
-  display:none;
-  padding:16px;
-  max-width:1100px;
-  margin:0 auto;
-  box-sizing:border-box;
-}
-.active{display:block}
-
-/* Buttons and inputs */
-.btn {
-  display:block;
-  width:100%;
-  max-width:720px;
-  margin:12px auto;
-  padding:var(--btn-padding);
-  border:none;
-  border-radius:14px;
-  font-size:1rem;
-  font-weight:600;
-  cursor:pointer;
-  text-align:center;
-  color:#fff;
-  box-sizing:border-box;
-}
-.button-row { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-.btn-small { padding:10px 12px; border-radius:10px; font-size:.95rem; }
-.btn-yellow { background:#ffcc4d; color:#473c00 }
-.btn-green  { background:#55d685 }
-.btn-pink   { background:#ff7da6 }
-.btn-blue   { background:#5aa9ff }
-
-.inputs { display:grid; gap:10px; margin-bottom:8px; grid-template-columns: 1fr; }
-.inputs input, .inputs select {
-  padding:12px; border-radius:12px; border:2px solid #e6eef2;
-  font-size:1rem; color:var(--card-ink); width:100%; box-sizing:border-box;
-}
-
-/* Cards */
-.card {
-  background:var(--card-bg);
-  color:var(--card-ink);
-  border-radius:var(--radius);
-  padding:12px;
-  margin:8px 0;
-  box-sizing:border-box;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
-}
-
-/* Meal list on Planner page */
-#mealList .card { display:flex; flex-direction:column; gap:8px; }
-.recipe { display:none; color:#2a4158; font-size:.95rem; }
-
-/* Seven-list: force vertical list layout (always list-like) */
-#sevenList {
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  margin-top:12px;
-  padding:0;
-  box-sizing:border-box;
-  width:100%;
-}
-
-/* Card base for list items */
-#sevenList .card {
-  padding:10px 12px;
-  border-radius:10px;
-  min-height:56px;
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-start;
-  cursor:pointer;
-  transition: box-shadow .12s ease, transform .12s ease;
-  background:var(--card-bg);
-  color:var(--card-ink);
-  overflow:visible;
-}
-
-/* Row with name, checkbox and chevron */
-#sevenList .row { display:flex; align-items:center; gap:10px; width:100%; }
-#sevenList .meal-name { font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:1rem; }
-#sevenList .chev { margin-left:auto; color:var(--muted); font-size:.95rem; transition: transform .22s ease; transform-origin:50% 50%; }
-
-/* Recipe panel uses max-height for smooth animation */
-#sevenList .meal-recipe {
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition: max-height .28s ease, opacity .18s ease, padding .18s ease;
-  padding-top: 0;
-  padding-bottom: 0;
-  font-style: italic;
-  color: #2a4158;
-  font-size: .95rem;
-}
-
-/* Expanded state */
-#sevenList .card.expanded .meal-recipe {
-  max-height: 18em;
-  opacity: 1;
-  padding-top: 8px;
-  padding-bottom: 6px;
-}
-#sevenList .card.expanded .chev { transform: rotate(180deg); }
-
-/* Manual list styling */
-#manualList .card { display:flex; align-items:center; justify-content:space-between; gap:10px; }
-
-/* Shopping list */
-.shopping-list { padding:12px; }
-
-/* Responsive tweaks (keep list vertical on all normal device widths) */
-@media (max-width:420px) {
-  .btn { padding:12px; font-size:.95rem; }
-  #sevenList .meal-name { font-size:.95rem; }
-}
-
-/* Accessibility focus */
-.card:focus, .btn:focus, .tool-btn:focus { outline:3px solid rgba(90,169,255,0.25); outline-offset:2px; }
-  </style>
+  <!-- External Styles -->
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<!-- Home Page -->
+<!-- HOME PAGE -->
 <div id="home" class="page active">
   <h2>Meal Planner</h2>
-  <button type="button" class="btn btn-yellow" onclick="nav('planner')">🍽️ Meal Planner</button>
-  <button type="button" class="btn btn-green" onclick="nav('seven')">📅 7 Day Meal Planner</button>
-  <button type="button" class="btn btn-pink" onclick="nav('shop')">🛒 Shopping List</button>
+  <button class="btn btn-yellow" onclick="nav('planner')">🍽️ Meal Planner</button>
+  <button class="btn btn-green" onclick="nav('seven')">📅 7 Day Meal Planner</button>
+  <button class="btn btn-pink" onclick="nav('shop')">🛒 Shopping List</button>
 </div>
-<!-- Planner Page -->
+
+<!-- PLANNER PAGE -->
 <div id="planner" class="page">
+  <button class="btn btn-green" onclick="nav('home')">🏠 Home</button>
   <h2>Meal Planner</h2>
-  <button type="button" class="btn btn-green" onclick="nav('home')">🏠 Home</button>
+
   <div class="inputs">
     <input id="mealName" placeholder="Meal name"/>
     <input id="mealItems" placeholder="Recipe items (comma separated)"/>
@@ -189,588 +40,58 @@ body {
       <option>Snack</option>
     </select>
   </div>
+
   <div class="button-row">
-    <button type="button" class="btn btn-blue" onclick="addMeal()">➕ Add Meal</button>
-    <button type="button" class="btn btn-yellow" onclick="nav('seven')">📅 7 Day Meal Planner</button>
+    <button class="btn btn-blue" onclick="addMeal()">➕ Add Meal</button>
+    <button class="btn btn-yellow" onclick="nav('seven')">📅 7 Day Meal Planner</button>
   </div>
+
   <div id="mealList"></div>
 </div>
-<!-- 7 Day Meal Planner Page -->
+
+<!-- 7 DAY PLANNER -->
 <div id="seven" class="page">
+  <button class="btn btn-green" onclick="nav('home')">🏠 Home</button>
   <h2>7 Day Meal Planner</h2>
-  <button type="button" class="btn btn-green" onclick="nav('home')">🏠 Home</button>
-  <div class="button-row" style="margin-bottom:12px;">
-    <button type="button" class="btn btn-yellow btn-small" onclick="shufflePlan()">🔀 Shuffle Plan</button>
-    <button type="button" class="btn btn-blue btn-small" onclick="nav('manual')">📝 Manually Select Meals</button>
-  </div>
 
-  <!-- Use a semantic list container so items read like a list -->
-  <div id="sevenList" role="list" aria-live="polite"></div>
+  <button class="btn btn-yellow" onclick="shufflePlan()">🔀 Shuffle Plan</button>
+  <button class="btn btn-blue" onclick="nav('manual')">📝 Manually Select Meals</button>
 
-  <button id="createListBtn" type="button" class="btn btn-pink" style="display:none; margin-top:12px;" onclick="nav('shop')">
+  <div id="sevenList"></div>
+
+  <button id="createListBtn" class="btn btn-pink" style="display:none;" onclick="nav('shop')">
     🛒 Create Shopping List
   </button>
 </div>
 
-<!-- Manual Selection Page -->
+<!-- MANUAL SELECTION -->
 <div id="manual" class="page">
+  <button class="btn btn-green" onclick="nav('seven')">⬅️ Back to 7 Day Planner</button>
   <h2>Manually Select Meals</h2>
-  <button type="button" class="btn btn-green" onclick="nav('seven')">⬅️ Back to 7 Day Planner</button>
+
   <div id="manualList"></div>
-  <button id="applyManualBtn" type="button" class="btn btn-yellow" style="display:none;" onclick="applyManualSelection()">
+
+  <button id="applyManualBtn" class="btn btn-yellow" style="display:none;" onclick="applyManualSelection()">
     ✅ Apply Selected Meals
   </button>
 </div>
-<!-- Shopping List Page -->
+
+<!-- SHOPPING LIST -->
 <div id="shop" class="page">
+  <button class="btn btn-green" onclick="nav('home')">🏠 Home</button>
   <h2>Shopping List</h2>
-  <button type="button" class="btn btn-green" onclick="nav('home')">🏠 Home</button>
 
   <div style="text-align:center; margin-bottom:10px;">
-    <button id="exportListBtn" type="button" class="btn btn-blue" onclick="exportShoppingList()" style="width:auto; display:inline-block; padding:10px 14px;">
+    <button id="exportListBtn" class="btn btn-blue" onclick="exportShoppingList()" style="width:auto; display:inline-block; padding:10px 14px;">
       ⤓ Export Shopping List
     </button>
   </div>
 
-  <div id="shoppingItems" class="shopping-list" aria-live="polite"></div>
+  <div id="shoppingItems" class="shopping-list"></div>
 </div>
-<script>
-/* ======= App data and initialization ======= */
-const defaultMeals = [
-  { name:"Spaghetti Bolognese", items:"Pasta, Minced Beef, Tomato Sauce, Garlic, Onion", cat:"Dinner" },
-  { name:"Grilled Salmon", items:"Salmon Fillet, Lemon, Olive Oil, Herbs", cat:"Dinner" },
-  { name:"Chicken Curry", items:"Chicken, Curry Paste, Coconut Milk, Rice", cat:"Dinner" },
-  { name:"Vegetable Stir Fry", items:"Broccoli, Carrots, Peppers, Soy Sauce, Noodles", cat:"Dinner" },
-  { name:"Beef Tacos", items:"Taco Shells, Beef, Lettuce, Tomato, Cheese", cat:"Dinner" },
-  { name:"Margherita Pizza", items:"Pizza Base, Tomato Sauce, Mozzarella, Basil", cat:"Dinner" },
-  { name:"Shepherd's Pie", items:"Minced Lamb, Potatoes, Carrots, Peas, Gravy", cat:"Dinner" }
-];
 
-let meals;
-try { meals = JSON.parse(localStorage.getItem('meals')); } catch (e) { meals = null; }
-if (!Array.isArray(meals) || meals.length === 0) {
-  meals = defaultMeals.slice();
-  localStorage.setItem('meals', JSON.stringify(meals));
-}
+<!-- External JS -->
+<script src="app.js"></script>
 
-let plan;
-try { plan = JSON.parse(localStorage.getItem('plan')); } catch (e) { plan = null; }
-if (!Array.isArray(plan) || plan.length !== 7) {
-  plan = Array(7).fill(null);
-  localStorage.setItem('plan', JSON.stringify(plan));
-}
-
-let manualSelected = new Set();
-let clearedShopping = new Set(JSON.parse(localStorage.getItem('clearedShopping') || '[]'));
-let checkedShopping = new Set(JSON.parse(localStorage.getItem('checkedShopping') || '[]'));
-
-function save() {
-  localStorage.setItem('meals', JSON.stringify(meals));
-  localStorage.setItem('plan',  JSON.stringify(plan));
-}
-function saveShoppingState() {
-  localStorage.setItem('clearedShopping', JSON.stringify(Array.from(clearedShopping)));
-  localStorage.setItem('checkedShopping', JSON.stringify(Array.from(checkedShopping)));
-}
-
-/* Temporary-clear helper: reset cleared items when plan changes */
-function resetClearedShopping() {
-  clearedShopping.clear();
-  saveShoppingState();
-}
-/* ======= Navigation and helpers ===== */
-function nav(p) {
-  document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
-  const el = document.getElementById(p);
-  if (!el) return;
-  el.classList.add('active');
-  if (p === 'planner') renderMeals();
-  if (p === 'seven')   renderPlan();
-  if (p === 'shop')    renderShoppingList();
-  if (p === 'manual')  renderManualList();
-}
-
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-function escapeAttr(str) {
-  return escapeHtml(str).replace(/"/g, '&quot;');
-}
-
-/* ======= Meals management ===== */
-function addMeal() {
-  const n = document.getElementById('mealName').value.trim();
-  const i = document.getElementById('mealItems').value.trim();
-  const c = document.getElementById('mealCategory').value;
-  if (!n || !i) { alert('Enter meal name and items'); return; }
-  meals.push({ name:n, items:i, cat:c });
-  save();
-  renderMeals();
-  document.getElementById('mealName').value = '';
-  document.getElementById('mealItems').value = '';
-}
-
-/* Improved renderMeals for mobile: buttons use type="button", stopPropagation and touchstart handlers */
-function renderMeals() {
-  const l = document.getElementById('mealList');
-  l.innerHTML = '';
-  meals.filter(m => m && m.name && m.items).forEach((m, x) => {
-    const d = document.createElement('div');
-    d.className = 'card';
-    const recipeId = `r${x}`;
-
-    d.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;">
-        <strong onclick="toggleRecipe('${recipeId}')" style="cursor:pointer">${escapeHtml(m.name)}</strong>
-        <span style="color:#6b7b88; font-size:13px;">(${escapeHtml(m.cat)})</span>
-        <span style="margin-left:auto; color:#6b7b88; font-size:13px;">▼</span>
-      </div>
-      <div id="${recipeId}" class="recipe" style="display:none; margin-top:8px;">${escapeHtml(m.items)}</div>
-      <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end;">
-        <button type="button" class="tool-btn" onclick="event.stopPropagation(); editMeal(${x})" ontouchstart="event.stopPropagation()">✏️ Edit</button>
-        <button type="button" class="tool-btn" onclick="event.stopPropagation(); deleteMeal(${x})" ontouchstart="event.stopPropagation()">🗑️ Delete</button>
-      </div>`;
-
-    // Ensure tool buttons don't let parent handlers intercept touch/click
-    d.querySelectorAll('.tool-btn').forEach(btn => {
-      btn.addEventListener('click', (ev) => ev.stopPropagation());
-      btn.addEventListener('touchstart', (ev) => ev.stopPropagation(), { passive: true });
-    });
-
-    l.appendChild(d);
-  });
-}
-
-function toggleRecipe(id) {
-  const e = document.getElementById(id);
-  if (e) e.style.display = (e.style.display === 'block' ? 'none' : 'block');
-}
-
-function editMeal(index) {
-  const m = meals[index];
-  if (!m) return;
-  const newName  = prompt('Edit meal name:', m.name);
-  if (newName === null) return;
-  const newItems = prompt('Edit recipe items (comma separated):', m.items);
-  if (newItems === null) return;
-  const newCat   = prompt('Edit category (Breakfast/Lunch/Dinner/Snack):', m.cat);
-  if (newCat === null) return;
-
-  const name  = newName.trim();
-  const items = newItems.trim();
-  const cat   = (newCat || m.cat).trim();
-  if (!name || !items) { alert('Meal name and items cannot be empty.'); return; }
-
-  meals[index] = { name, items, cat };
-  save();
-  renderMeals();
-
-  // Update any plan entries that referenced the old meal
-  plan = plan.map(p => {
-    if (!p) return p;
-    const same = (p.name === m.name && p.items === m.items);
-    return same ? { ...p, name, items, cat } : p;
-  });
-  save();
-  resetClearedShopping(); // plan changed -> restore cleared items
-  renderPlan();
-}
-
-function deleteMeal(index) {
-  const m = meals[index];
-  if (!m) return;
-  const ok = confirm(`Delete "${m.name}"?`);
-  if (!ok) return;
-
-  meals.splice(index, 1);
-
-  plan = plan.map(p => {
-    if (!p) return p;
-    const same = (p.name === m.name && p.items === m.items);
-    return same ? null : p;
-  });
-
-  save();
-  resetClearedShopping(); // plan changed -> restore cleared items
-  renderMeals();
-  renderPlan();
-}
-
-/* ======= Manual selection helpers ===== */
-function renderManualList() {
-  const container = document.getElementById('manualList');
-  container.innerHTML = '';
-  if (!meals || meals.length === 0) {
-    container.innerHTML = '<div class="card empty">No meals available. Add meals on the Meal Planner page.</div>';
-    document.getElementById('applyManualBtn').style.display = 'none';
-    return;
-  }
-
-  meals.forEach((m, idx) => {
-    if (!m || !m.name) return;
-    const row = document.createElement('div');
-    row.className = 'card';
-    row.style.display = 'flex';
-    row.style.alignItems = 'center';
-    row.style.justifyContent = 'space-between';
-    row.style.gap = '10px';
-
-    const left = document.createElement('div');
-    left.style.display = 'flex';
-    left.style.alignItems = 'center';
-    left.style.gap = '10px';
-    left.style.flex = '1';
-
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.id = `manual_cb_${idx}`;
-    cb.checked = manualSelected.has(idx);
-    cb.addEventListener('change', (ev) => {
-      ev.stopPropagation();
-      if (cb.checked) manualSelected.add(idx);
-      else manualSelected.delete(idx);
-      document.getElementById('applyManualBtn').style.display = manualSelected.size ? 'block' : 'none';
-    });
-
-    const title = document.createElement('div');
-    title.style.flex = '1';
-    title.style.minWidth = '0';
-    title.innerHTML = `<div style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(m.name)}</div>
-                       <div style="font-size:12px; color:#6b7b88; margin-top:4px;">${escapeHtml(m.cat)}</div>`;
-
-    left.appendChild(cb);
-    left.appendChild(title);
-
-    const preview = document.createElement('div');
-    preview.style.fontSize = '13px';
-    preview.style.color = '#2a4158';
-    preview.style.marginLeft = '8px';
-    preview.textContent = m.items.split(',').slice(0,4).map(s => s.trim()).join(', ');
-
-    row.appendChild(left);
-    row.appendChild(preview);
-
-    // Prevent parent click handlers from intercepting checkbox taps
-    row.querySelectorAll('input[type="checkbox"]').forEach(el => {
-      el.addEventListener('touchstart', (ev) => ev.stopPropagation(), { passive: true });
-    });
-
-    container.appendChild(row);
-  });
-
-  document.getElementById('applyManualBtn').style.display = manualSelected.size ? 'block' : 'none';
-}
-function applyManualSelection() {
-  if (!manualSelected.size) return;
-  const selected = Array.from(manualSelected).map(i => meals[i]).filter(Boolean);
-  if (!selected.length) return;
-
-  let selIndex = 0;
-  for (let i = 0; i < 7 && selIndex < selected.length; i++) {
-    if (plan[i] && plan[i].locked) continue;
-    plan[i] = { ...selected[selIndex++], locked: false };
-  }
-
-  for (let i = 0; i < 7 && selIndex < selected.length; i++) {
-    if (!plan[i]) {
-      plan[i] = { ...selected[selIndex++], locked: false };
-    }
-  }
-
-  manualSelected.clear();
-  save();
-  resetClearedShopping(); // plan changed -> restore cleared items
-  renderManualList();
-  renderPlan();
-  const applyBtn = document.getElementById('applyManualBtn');
-  if (applyBtn) applyBtn.style.display = 'none';
-  nav('seven');
-}
-
-/* ======= Weekly plan: shuffle and compact render (list-style) ===== */
-function shufflePlan() {
-  if (!meals.length) { alert('Add some meals first'); return; }
-  const lockedEntries = plan.map((p, idx) => (p && p.locked) ? { idx, entry: p } : null).filter(Boolean);
-  const lockedKeys = new Set(lockedEntries.map(e => (e.entry.name + '||' + e.entry.items)));
-  const pool = meals.filter(m => !lockedKeys.has(m.name + '||' + m.items));
-  const shuffled = pool.slice();
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  const newPlan = Array(7).fill(null);
-  lockedEntries.forEach(e => newPlan[e.idx] = { ...e.entry, locked: true });
-  let pIndex = 0;
-  for (let i = 0; i < 7; i++) {
-    if (newPlan[i]) continue;
-    if (pIndex >= shuffled.length) break;
-    newPlan[i] = { ...shuffled[pIndex++], locked: false };
-  }
-  plan = newPlan;
-  save();
-  resetClearedShopping(); // plan changed -> restore cleared items
-  renderPlan();
-  const createBtn = document.getElementById('createListBtn');
-  if (createBtn) createBtn.style.display = (plan.filter(Boolean).length === 7) ? 'block' : 'none';
-}
-
-/* Render plan as a vertical list with compact rows and dropdown recipe */
-function renderPlan() {
-  const l = document.getElementById('sevenList');
-  l.innerHTML = '';
-
-  const hasAny = plan.some(p => p && p.name && p.items);
-  if (!hasAny) {
-    l.innerHTML = '<div class="card empty">No meals yet. Use Shuffle or Manual Select.</div>';
-    const createBtn = document.getElementById('createListBtn');
-    if (createBtn) createBtn.style.display = 'none';
-    return;
-  }
-
-  // Optional day labels (Day 1..Day 7)
-  const dayLabels = ['Day 1','Day 2','Day 3','Day 4','Day 5','Day 6','Day 7'];
-
-  for (let i = 0; i < 7; i++) {
-    const m = plan[i];
-    const d = document.createElement('div');
-    d.className = 'card';
-    d.setAttribute('role','listitem');
-    d.setAttribute('tabindex','0');
-    d.setAttribute('aria-expanded','false');
-
-    if (!m) {
-      d.innerHTML = `<div style="color:var(--muted);font-size:13px;">${dayLabels[i]} — No meal assigned</div>`;
-    } else {
-      d.innerHTML = `
-        <div class="row" style="align-items:center;">
-          <input type="checkbox" aria-label="Keep meal" onchange="toggleLock(${i})" ${m.locked ? 'checked' : ''} title="Keep this meal in place">
-          <div style="flex:1; min-width:0; margin-left:8px;">
-            <div class="meal-name">${escapeHtml(m.name)}</div>
-            <div style="font-size:12px; color:var(--muted); margin-top:4px;">${escapeHtml(m.cat || '')}</div>
-          </div>
-          <span class="chev" aria-hidden="true">▼</span>
-        </div>
-        <div class="meal-recipe">${escapeHtml(m.items)}</div>
-      `;
-    }
-
-    // Toggle expand/collapse on card click/tap, but ignore clicks on interactive controls
-    d.addEventListener('click', (ev) => {
-      const t = ev.target;
-      if (!t) return;
-      const tag = (t.tagName || '').toLowerCase();
-      const type = t.type || '';
-      if (type === 'checkbox' || tag === 'input' || tag === 'button' || tag === 'label' || t.classList.contains('tool-btn')) return;
-      d.classList.toggle('expanded');
-      d.setAttribute('aria-expanded', d.classList.contains('expanded'));
-    });
-
-    // Keyboard accessibility
-    d.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); d.click(); }
-    });
-
-    // Prevent checkbox touch/click from bubbling and toggling expansion
-    const checkbox = d.querySelector('input[type="checkbox"]');
-    if (checkbox) {
-      checkbox.addEventListener('touchstart', (ev) => ev.stopPropagation(), { passive: true });
-      checkbox.addEventListener('click', (ev) => ev.stopPropagation());
-    }
-
-    // Chevron toggles expansion explicitly
-    const chev = d.querySelector('.chev');
-    if (chev) {
-      chev.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        d.classList.toggle('expanded');
-        d.setAttribute('aria-expanded', d.classList.contains('expanded'));
-      });
-      chev.addEventListener('touchstart', (ev) => {
-        ev.stopPropagation();
-        d.classList.toggle('expanded');
-        d.setAttribute('aria-expanded', d.classList.contains('expanded'));
-      }, { passive: true });
-    }
-
-    // Ensure card starts collapsed
-    d.classList.remove('expanded');
-    d.setAttribute('aria-expanded', 'false');
-
-    l.appendChild(d);
-  }
-
-  const createBtn = document.getElementById('createListBtn');
-  if (createBtn) createBtn.style.display = (plan.filter(Boolean).length === 7) ? 'block' : 'none';
-}
-
-function toggleLock(i) {
-  if (i < 0 || i >= 7) return;
-  if (!plan[i]) return;
-  plan[i].locked = !plan[i].locked;
-  save();
-  renderPlan();
-}
-
-/* ======= Shopping list builder ======= */
-function renderShoppingList() {
-  function normalizeItem(raw) {
-    if (!raw) return '';
-    let s = String(raw).trim().toLowerCase();
-    s = s.replace(/[^\w\s]/g, '');
-    s = s.replace(/\s+/g, ' ').trim();
-    if (s.length > 3 && s.endsWith('s')) s = s.slice(0, -1);
-    return s;
-  }
-
-  const seen = new Map();
-  plan.forEach(m => {
-    if (!m || !m.items) return;
-    m.items.split(',').map(s => s.trim()).filter(Boolean).forEach(it => {
-      const key = normalizeItem(it);
-      if (!key) return;
-      if (!seen.has(key)) {
-        const pretty = it.replace(/\b\w/g, c => c.toUpperCase());
-        seen.set(key, pretty);
-      }
-    });
-  });
-
-  const l = document.getElementById('shoppingItems');
-  l.innerHTML = '';
-  if (seen.size === 0) {
-    l.innerHTML = '<div class="card empty">No items yet. Fill your weekly plan first.</div>';
-    return;
-  }
-
-  const entries = Array.from(seen.entries()).sort((a,b) => a[1].localeCompare(b[1]));
-  entries.forEach(([key, pretty]) => {
-    // If user temporarily cleared this item for current plan, skip it
-    if (clearedShopping.has(key)) return;
-
-    const d = document.createElement('div');
-    d.className = 'shopping-item';
-    d.style.display = 'flex';
-    d.style.alignItems = 'center';
-    d.style.justifyContent = 'space-between';
-    d.style.padding = '6px 0';
-
-    const left = document.createElement('div');
-    left.style.display = 'flex';
-    left.style.alignItems = 'center';
-    left.style.gap = '8px';
-    left.style.flex = '1';
-    left.style.cursor = 'pointer';
-
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.style.transform = 'scale(1.05)';
-    if (checkedShopping.has(key)) input.checked = true;
-
-    const span = document.createElement('span');
-    span.textContent = pretty;
-    if (checkedShopping.has(key)) {
-      span.style.textDecoration = 'line-through';
-      span.style.fontWeight = '700';
-    }
-
-    left.appendChild(input);
-    left.appendChild(span);
-
-    const clearBtn = document.createElement('button');
-    clearBtn.type = 'button';
-    clearBtn.className = 'tool-btn';
-    clearBtn.textContent = '✖';
-
-    left.addEventListener('click', (ev) => {
-      if (ev.target === clearBtn) return;
-      const isChecked = checkedShopping.has(key);
-      if (isChecked) {
-        checkedShopping.delete(key);
-        input.checked = false;
-        span.style.textDecoration = 'none';
-        span.style.fontWeight = '400';
-      } else {
-        checkedShopping.add(key);
-        input.checked = true;
-        span.style.textDecoration = 'line-through';
-        span.style.fontWeight = '700';
-      }
-      saveShoppingState();
-    });
-
-    input.addEventListener('change', () => {
-      if (input.checked) {
-        checkedShopping.add(key);
-        span.style.textDecoration = 'line-through';
-        span.style.fontWeight = '700';
-      } else {
-        checkedShopping.delete(key);
-        span.style.textDecoration = 'none';
-        span.style.fontWeight = '400';
-      }
-      saveShoppingState();
-    });
-
-    clearBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      // Temporarily clear this item for the current plan
-      clearedShopping.add(key);
-      if (checkedShopping.has(key)) checkedShopping.delete(key);
-      saveShoppingState();
-      d.remove();
-    });
-
-    d.appendChild(left);
-    d.appendChild(clearBtn);
-    l.appendChild(d);
-  });
-}
-
-/* ======= Export helper ======= */
-function exportShoppingList() {
-  const items = Array.from(document.querySelectorAll('#shoppingItems span')).map(el => el.textContent);
-  if (!items.length) { alert('No items to export.'); return; }
-  const blob = new Blob([items.join('\n')], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'shopping-list.txt';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-/* ======= Service worker registration ======= */
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js')
-    .then(reg => console.info('ServiceWorker registered', reg.scope))
-    .catch(err => console.warn('ServiceWorker registration failed', err));
-}
-
-/* Optional: scale root font-size for smoother proportional resizing */
-(function(){
-  function scaleRoot() {
-    const w = Math.max(document.documentElement.clientWidth || 320, 320);
-    const size = Math.max(14, Math.min(20, 16 * (w / 375)));
-    document.documentElement.style.fontSize = size + 'px';
-  }
-  window.addEventListener('resize', scaleRoot);
-  window.addEventListener('orientationchange', scaleRoot);
-  scaleRoot();
-})();
-
-window.addEventListener('load', () => {
-  renderMeals();
-  renderPlan();
-  renderManualList();
-});
-</script>
 </body>
 </html>
