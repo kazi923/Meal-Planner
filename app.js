@@ -25,6 +25,7 @@ if (!Array.isArray(plan) || plan.length !== 7) {
 
 /* Shopping UI state */
 let manualSelected = new Set(JSON.parse(localStorage.getItem('manualSelected') || '[]'));
+let manualAdded = new Set(JSON.parse(localStorage.getItem('manualAdded') || '[]')); // indices added to plan by selection
 let clearedShopping = new Set(JSON.parse(localStorage.getItem('clearedShopping') || '[]'));
 let checkedShopping = new Set(JSON.parse(localStorage.getItem('checkedShopping') || '[]'));
 
@@ -34,6 +35,7 @@ let planSnapshot = localStorage.getItem('planSnapshot') || null;
 /* ======= Persistence helpers ===== */
 function saveManualSelected() {
   localStorage.setItem('manualSelected', JSON.stringify(Array.from(manualSelected)));
+  localStorage.setItem('manualAdded', JSON.stringify(Array.from(manualAdded)));
 }
 function saveShoppingState() {
   localStorage.setItem('clearedShopping', JSON.stringify(Array.from(clearedShopping)));
@@ -175,6 +177,9 @@ function deleteMeal(index) {
     const same = (p.name === m.name && p.items === m.items);
     return same ? null : p;
   });
+  // If any manualAdded indices now point to removed plan entries, clear them
+  manualAdded = new Set(Array.from(manualAdded).filter(i => plan[i]));
+  saveManualSelected();
   save();
   renderMeals();
   renderPlan();
@@ -183,14 +188,17 @@ function deleteMeal(index) {
 }
 
 /* ======= Select Meals helpers (buttons instead of checkboxes) ===== */
+/* Behavior change:
+   - Remove Apply button.
+   - Clicking a meal immediately locks it into the plan (adds to first empty slot if needed) and adds its items to the shopping list.
+   - Clicking again unlocks/removes the meal from the plan (if it was added by selection) or unlocks it (if it existed previously), and removes its items from the shopping list.
+*/
 function renderManualList() {
   const container = document.getElementById('manualList');
   if (!container) return;
   container.innerHTML = "";
   if (!meals || meals.length === 0) {
     container.innerHTML = '<div class="card empty">No meals available. Add meals on the Meal Planner page.</div>';
-    const applyBtn = document.getElementById('applyManualBtn');
-    if (applyBtn) applyBtn.style.display = 'none';
     return;
   }
 
@@ -209,69 +217,62 @@ function renderManualList() {
     btn.className = 'meal-btn';
     if (manualSelected.has(idx)) btn.classList.add('selected');
     btn.textContent = m.name;
-    btn.title = m.items;
+    btn.title = m.name;
+
     btn.addEventListener('click', () => {
-      // toggle selection
-      if (manualSelected.has(idx)) {
+      // Toggle selection state
+      const wasSelected = manualSelected.has(idx);
+      if (wasSelected) {
+        // Unselect: remove shopping inclusion and unlock/remove from plan
         manualSelected.delete(idx);
+
+        // Find matching plan index (if any)
+        const planIdx = plan.findIndex(p => p && p.name === m.name && p.items === m.items);
+        if (planIdx !== -1) {
+          if (manualAdded.has(planIdx)) {
+            // If we added this entry when selecting, remove it entirely
+            plan[planIdx] = null;
+            manualAdded.delete(planIdx);
+          } else {
+            // If it was an existing plan entry, just unlock and exclude from shopping
+            plan[planIdx].locked = false;
+            plan[planIdx].includeInShopping = false;
+          }
+        }
       } else {
+        // Select: add to manualSelected and lock into plan (and include in shopping)
         manualSelected.add(idx);
+
+        // Check if meal already exists in plan
+        let planIdx = plan.findIndex(p => p && p.name === m.name && p.items === m.items);
+        if (planIdx !== -1) {
+          // If exists, lock it and include in shopping
+          plan[planIdx].locked = true;
+          plan[planIdx].includeInShopping = true;
+        } else {
+          // Add to first empty slot
+          planIdx = plan.findIndex(p => !p);
+          if (planIdx === -1) {
+            // No empty slot: replace first non-locked non-manualAdded entry, fallback to index 0
+            planIdx = plan.findIndex(p => p && !p.locked && !manualAdded.has(plan.indexOf(p)));
+            if (planIdx === -1) planIdx = 0;
+          }
+          plan[planIdx] = { ...m, locked: true, includeInShopping: true };
+          manualAdded.add(planIdx);
+        }
       }
+
+      // Persist and update UI
       saveManualSelected();
-      // update UI and shopping list immediately
+      save();
       renderManualList();
       renderShoppingList();
-      const applyBtn = document.getElementById('applyManualBtn');
-      if (applyBtn) applyBtn.style.display = manualSelected.size ? 'block' : 'none';
     });
 
-    const meta = document.createElement('div');
-    meta.style.fontSize = '13px';
-    meta.style.color = '#2a4158';
-    meta.style.marginLeft = '8px';
-    meta.textContent = m.cat;
-
     left.appendChild(btn);
-    left.appendChild(meta);
-
-    const preview = document.createElement('div');
-    preview.style.fontSize = '13px';
-    preview.style.color = '#2a4158';
-    preview.style.marginLeft = '8px';
-    preview.textContent = m.items.split(",").slice(0,4).map(s => s.trim()).join(', ');
-
     row.appendChild(left);
-    row.appendChild(preview);
     container.appendChild(row);
   });
-
-  const applyBtn = document.getElementById('applyManualBtn');
-  if (applyBtn) applyBtn.style.display = manualSelected.size ? 'block' : 'none';
-}
-
-function applyManualSelection() {
-  if (!manualSelected.size) return;
-  const selectedMeals = Array.from(manualSelected).map(i => meals[i]).filter(Boolean);
-  if (!selectedMeals.length) return;
-  let selIndex = 0;
-  for (let i = 0; i < 7 && selIndex < selectedMeals.length; i++) {
-    if (plan[i] && plan[i].locked) continue;
-    plan[i] = { ...selectedMeals[selIndex++], locked: false, includeInShopping: true };
-  }
-  for (let i = 0; i < 7 && selIndex < selectedMeals.length; i++) {
-    if (!plan[i]) {
-      plan[i] = { ...selectedMeals[selIndex++], locked: false, includeInShopping: true };
-    }
-  }
-  manualSelected.clear();
-  saveManualSelected();
-  save();
-  renderManualList();
-  renderPlan();
-  renderShoppingList();
-  const applyBtn = document.getElementById('applyManualBtn');
-  if (applyBtn) applyBtn.style.display = 'none';
-  nav('select');
 }
 
 /* ======= Weekly plan helpers (kept for compatibility) ===== */
@@ -305,6 +306,11 @@ function toggleLock(i) {
   if (!plan[i]) return;
   plan[i].locked = !plan[i].locked;
   plan[i].includeInShopping = !!plan[i].locked;
+  // If toggled off and this index was in manualAdded, remove it from manualAdded
+  if (!plan[i].locked && manualAdded.has(i)) {
+    manualAdded.delete(i);
+  }
+  saveManualSelected();
   save();
   renderPlan();
   renderShoppingList();
@@ -334,7 +340,7 @@ function renderShoppingList() {
     });
   });
 
-  // 2) Items from manually selected meals on Select Meals page
+  // 2) Items from manually selected meals on Select Meals page (manualSelected)
   Array.from(manualSelected).forEach(idx => {
     const m = meals[idx];
     if (!m || !m.items) return;
