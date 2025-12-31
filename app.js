@@ -6,7 +6,8 @@ const defaultMeals = [
   { name: "Vegetable Stir Fry", items: "Broccoli, Carrots, Peppers, Soy Sauce, Noodles", cat: "Dinner" },
   { name: "Beef Tacos", items: "Taco Shells, Beef, Lettuce, Tomato, Cheese", cat: "Dinner" },
   { name: "Margherita Pizza", items: "Pizza Base, Tomato Sauce, Mozzarella, Basil", cat: "Dinner" },
-  { name: "Shepherd's Pie", items: "Minced Lamb, Potatoes, Carrots, Peas, Gravy", cat: "Dinner" }
+  { name: "Shepherd's Pie", items: "Minced Lamb, Potatoes, Carrots, Peas, Gravy", cat: "Dinner" },
+  { name: "Lamb Steaks with Chips and peas", items: "Lamb Steaks, Chips, Peas, Gravy", cat: "Dinner" }
 ];
 
 let meals;
