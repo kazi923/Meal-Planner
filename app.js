@@ -28,31 +28,6 @@ let clearedShopping=new Set(JSON.parse(localStorage.getItem('clearedShopping')||
 let checkedShopping=new Set(JSON.parse(localStorage.getItem('checkedShopping')||'[]'));
 let planSnapshot=localStorage.getItem('planSnapshot')||null;
 
-/* ===== Theme System ===== */
-
-const themes = [
-  "theme-red","theme-orange","theme-yellow","theme-green","theme-blue","theme-indigo","theme-violet",
-  "theme-pink","theme-teal","theme-lime","theme-gold","theme-silver","theme-brown","theme-black",
-  "theme-white","theme-coral","theme-sky","theme-mint","theme-rose","theme-sunset","theme-ocean",
-  "theme-forest","theme-chocolate"
-];
-
-let themeIndex = 3; // start on green
-
-function cycleTheme() {
-  themeIndex = (themeIndex + 1) % themes.length;
-  const newTheme = themes[themeIndex];
-  applyTheme(newTheme);
-  localStorage.setItem("savedTheme", newTheme);
-}
-
-function applyTheme(themeClass) {
-  document.querySelectorAll(".btn").forEach(btn => {
-    themes.forEach(t => btn.classList.remove(t));
-    btn.classList.add(themeClass);
-  });
-}
-
 /* ===== Helpers ===== */
 const saveManualSelected=()=>{
   localStorage.setItem('manualSelected',JSON.stringify([...manualSelected]));
@@ -208,11 +183,4 @@ window.onload=()=>{
   renderMeals();
   renderManualList();
   renderShoppingList();
-
-  // Load saved theme
-  const saved = localStorage.getItem("savedTheme");
-  if (saved) {
-    applyTheme(saved);
-    themeIndex = themes.indexOf(saved);
-  }
 };

@@ -4,7 +4,6 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <title>Meal Planner</title>
-  <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -13,16 +12,13 @@
 <div id="home" class="page active">
   <h2>Meal Planner</h2>
 
-  <button class="btn btn-green" onclick="nav('planner')">Meal Planner</button>
-  <button class="btn btn-green" onclick="nav('select')">Select Meals</button>
-  <button class="btn btn-green" onclick="nav('shop')">Shopping List</button>
-
-  <!-- Theme Button BELOW shopping list -->
-  <button class="btn btn-green" onclick="cycleTheme()">Change Colour Theme</button>
+  <button class="btn theme-ocean">Meal Planner</button>
+  <button class="btn theme-ocean" onclick="nav('select')">Select Meals</button>
+  <button class="btn theme-ocean" onclick="nav('shop')">Shopping List</button>
 </div>
 
 <div id="planner" class="page">
-  <button class="btn btn-green" onclick="nav('home')">Home</button>
+  <button class="btn theme-ocean" onclick="nav('home')">Home</button>
   <h2>Meal Planner</h2>
   <div class="inputs">
     <input id="mealName" placeholder="Meal name"/>
@@ -32,29 +28,29 @@
     </select>
   </div>
   <div class="button-row">
-    <button class="btn btn-green" onclick="addMeal()">+ Add Meal</button>
-    <button class="btn btn-green" onclick="nav('select')">Select Meals</button>
+    <button class="btn theme-ocean" onclick="addMeal()">+ Add Meal</button>
+    <button class="btn theme-ocean" onclick="nav('select')">Select Meals</button>
   </div>
   <div id="mealList"></div>
 </div>
 
 <div id="select" class="page">
-  <button class="btn btn-green" onclick="nav('home')">Home</button>
+  <button class="btn theme-ocean" onclick="nav('home')">Home</button>
   <h2>Select Meals</h2>
   <div style="text-align:center;margin:10px 0;">
-    <button class="btn btn-green" onclick="nav('shop')">Go to Shopping List</button>
+    <button class="btn theme-ocean" onclick="nav('shop')">Go to Shopping List</button>
   </div>
   <div id="manualList"></div>
 </div>
 
 <div id="shop" class="page">
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
-    <button class="btn btn-green" onclick="nav('home')">Home</button>
-    <button class="btn btn-green" onclick="nav('select')">Select Meals</button>
+    <button class="btn theme-ocean" onclick="nav('home')">Home</button>
+    <button class="btn theme-ocean" onclick="nav('select')">Select Meals</button>
   </div>
   <h2>Shopping List</h2>
   <div style="text-align:center;margin-bottom:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-    <button class="btn btn-green" onclick="clearAllShopping()">Clear All</button>
+    <button class="btn theme-ocean" onclick="clearAllShopping()">Clear All</button>
   </div>
   <div id="shoppingItems" class="shopping-list"></div>
 </div>
