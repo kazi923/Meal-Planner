@@ -2,20 +2,122 @@
   --green:#7BC47F; --green-dark:#6FBF73; --green-light:#A8D8A0;
   --grey-bg:#f5f5f5; --grey-card:#fff; --grey-border:#dcdcdc; --text:#333;
 }
-html,body{margin:0;padding:0;background:var(--grey-bg);font-family:Poppins,sans-serif;color:var(--text);}
+
+/* Faded kitchen background */
+html,body{
+  margin:0;
+  padding:0;
+  background-image:url('background.jpg');
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  background-attachment:fixed;
+  opacity:0.97;
+  font-family:Poppins,sans-serif;
+  color:var(--text);
+}
+
 .page{display:none;padding:20px;max-width:900px;margin:0 auto;}
 .active{display:block;}
 h2{text-align:center;margin-bottom:20px;color:var(--text);}
-.btn{display:block;width:100%;max-width:300px;margin:10px auto;padding:14px;border:none;border-radius:10px;
-  font-size:1rem;font-weight:600;cursor:pointer;background:var(--green);color:#fff;box-shadow:0 2px 4px rgba(0,0,0,0.1);}
+
+.btn{
+  display:block;
+  width:100%;
+  max-width:300px;
+  margin:10px auto;
+  padding:14px;
+  border:none;
+  border-radius:10px;
+  font-size:1rem;
+  font-weight:600;
+  cursor:pointer;
+  background:var(--green);
+  color:#fff;
+  box-shadow:0 2px 4px rgba(0,0,0,0.1);
+}
 .btn:hover{background:var(--green-dark);}
+
 .inputs{display:grid;gap:10px;margin-bottom:20px;}
-.inputs input,.inputs select{padding:12px;border-radius:8px;border:1px solid var(--grey-border);font-size:1rem;background:#fff;color:var(--text);}
-.card{background:#fff;border:1px solid var(--grey-border);border-radius:10px;padding:12px;margin-bottom:10px;}
-.meal-btn{width:100%;padding:12px;border-radius:8px;border:1px solid var(--green-light);background:var(--green-light);color:var(--text);font-weight:600;cursor:pointer;}
-.meal-btn.selected{background:var(--green);border-color:var(--green);color:#fff;}
-.shopping-list{background:#fff;border-radius:10px;padding:12px;border:1px solid var(--grey-border);}
-.shopping-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--grey-border);}
+.inputs input,.inputs select{
+  padding:12px;
+  border-radius:8px;
+  border:1px solid var(--grey-border);
+  font-size:1rem;
+  background:#fff;
+  color:var(--text);
+}
+
+.card{
+  background:#fff;
+  border:1px solid var(--grey-border);
+  border-radius:10px;
+  padding:12px;
+  margin-bottom:10px;
+}
+
+.meal-btn{
+  width:100%;
+  padding:12px;
+  border-radius:8px;
+  border:1px solid var(--green-light);
+  background:var(--green-light);
+  color:var(--text);
+  font-weight:600;
+  cursor:pointer;
+}
+.meal-btn.selected{
+  background:var(--green);
+  border-color:var(--green);
+  color:#fff;
+}
+
+.shopping-list{
+  background:#fff;
+  border-radius:10px;
+  padding:12px;
+  border:1px solid var(--grey-border);
+}
+
+.shopping-item{
+  display:flex;
+  justify-content:space-between;
+  padding:8px 0;
+  border-bottom:1px solid var(--grey-border);
+}
 .shopping-item:last-child{border-bottom:none;}
 .collected{opacity:0.4;text-decoration:line-through;transition:opacity 0.3s ease;}
-.tool-btn{background:#eee;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;}
+
+.tool-btn{
+  background:#eee;
+  border:none;
+  padding:6px 10px;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+/* 22 preset theme colours */
+.theme-red    { background:#e74c3c !important; }
+.theme-orange { background:#e67e22 !important; }
+.theme-yellow { background:#f1c40f !important; color:#333 !important; }
+.theme-green  { background:#2ecc71 !important; }
+.theme-blue   { background:#3498db !important; }
+.theme-indigo { background:#3f51b5 !important; }
+.theme-violet { background:#9b59b6 !important; }
+
+.theme-pink   { background:#ff69b4 !important; }
+.theme-teal   { background:#1abc9c !important; }
+.theme-lime   { background:#cddc39 !important; color:#333 !important; }
+.theme-gold   { background:#f7c843 !important; color:#333 !important; }
+.theme-silver { background:#bdc3c7 !important; color:#333 !important; }
+.theme-brown  { background:#8e5a2a !important; }
+.theme-black  { background:#000 !important; }
+.theme-white  { background:#fff !important; color:#333 !important; border:1px solid #ccc !important; }
+.theme-coral  { background:#ff7f50 !important; }
+.theme-sky    { background:#87ceeb !important; }
+.theme-mint   { background:#98ff98 !important; color:#333 !important; }
+.theme-rose   { background:#ff007f !important; }
+.theme-sunset { background:#ff4500 !important; }
+.theme-ocean  { background:#006994 !important; }
+.theme-forest { background:#228b22 !important; }
+.theme-chocolate { background:#381819 !important; }

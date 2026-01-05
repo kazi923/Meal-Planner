@@ -11,10 +11,16 @@ const defaultMeals=[
 ];
 
 let meals=JSON.parse(localStorage.getItem('meals')||"null");
-if(!Array.isArray(meals)||meals.length===0){meals=defaultMeals.slice();localStorage.setItem('meals',JSON.stringify(meals));}
+if(!Array.isArray(meals)||meals.length===0){
+  meals=defaultMeals.slice();
+  localStorage.setItem('meals',JSON.stringify(meals));
+}
 
 let plan=JSON.parse(localStorage.getItem('plan')||"null");
-if(!Array.isArray(plan)||plan.length!==7){plan=Array(7).fill(null);localStorage.setItem('plan',JSON.stringify(plan));}
+if(!Array.isArray(plan)||plan.length!==7){
+  plan=Array(7).fill(null);
+  localStorage.setItem('plan',JSON.stringify(plan));
+}
 
 let manualSelected=new Set(JSON.parse(localStorage.getItem('manualSelected')||'[]'));
 let manualAdded=new Set(JSON.parse(localStorage.getItem('manualAdded')||'[]'));
@@ -22,9 +28,40 @@ let clearedShopping=new Set(JSON.parse(localStorage.getItem('clearedShopping')||
 let checkedShopping=new Set(JSON.parse(localStorage.getItem('checkedShopping')||'[]'));
 let planSnapshot=localStorage.getItem('planSnapshot')||null;
 
+/* ===== Theme System ===== */
+
+const themes = [
+  "theme-red","theme-orange","theme-yellow","theme-green","theme-blue","theme-indigo","theme-violet",
+  "theme-pink","theme-teal","theme-lime","theme-gold","theme-silver","theme-brown","theme-black",
+  "theme-white","theme-coral","theme-sky","theme-mint","theme-rose","theme-sunset","theme-ocean",
+  "theme-forest","theme-chocolate"
+];
+
+let themeIndex = 3; // start on green
+
+function cycleTheme() {
+  themeIndex = (themeIndex + 1) % themes.length;
+  const newTheme = themes[themeIndex];
+  applyTheme(newTheme);
+  localStorage.setItem("savedTheme", newTheme);
+}
+
+function applyTheme(themeClass) {
+  document.querySelectorAll(".btn").forEach(btn => {
+    themes.forEach(t => btn.classList.remove(t));
+    btn.classList.add(themeClass);
+  });
+}
+
 /* ===== Helpers ===== */
-const saveManualSelected=()=>{localStorage.setItem('manualSelected',JSON.stringify([...manualSelected]));localStorage.setItem('manualAdded',JSON.stringify([...manualAdded]));};
-const saveShoppingState=()=>{localStorage.setItem('clearedShopping',JSON.stringify([...clearedShopping]));localStorage.setItem('checkedShopping',JSON.stringify([...checkedShopping]));};
+const saveManualSelected=()=>{
+  localStorage.setItem('manualSelected',JSON.stringify([...manualSelected]));
+  localStorage.setItem('manualAdded',JSON.stringify([...manualAdded]));
+};
+const saveShoppingState=()=>{
+  localStorage.setItem('clearedShopping',JSON.stringify([...clearedShopping]));
+  localStorage.setItem('checkedShopping',JSON.stringify([...checkedShopping]));
+};
 const computePlanSnapshot=()=>JSON.stringify(plan.map(p=>p?(p.name+'||'+p.items):null));
 
 function save(){
@@ -32,8 +69,11 @@ function save(){
   localStorage.setItem('plan',JSON.stringify(plan));
   const snap=computePlanSnapshot();
   if(snap!==planSnapshot){
-    planSnapshot=snap;localStorage.setItem('planSnapshot',snap);
-    clearedShopping=new Set();checkedShopping=new Set();saveShoppingState();
+    planSnapshot=snap;
+    localStorage.setItem('planSnapshot',snap);
+    clearedShopping=new Set();
+    checkedShopping=new Set();
+    saveShoppingState();
   }
   if(document.getElementById('shop').classList.contains('active'))renderShoppingList();
 }
@@ -46,13 +86,15 @@ function nav(p){
   if(p==="shop")renderShoppingList();
 }
 
-const escapeHtml=s=>s?s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"):"";
+const escapeHtml=s=>s?s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+.replace(/"/g,"&quot;").replace(/'/g,"&#39;"):"";
 
 /* ===== Meals ===== */
 function addMeal(){
   const n=mealName.value.trim(),i=mealItems.value.trim(),c=mealCategory.value;
   if(!n||!i)return alert("Enter meal name and items");
-  meals.push({name:n,items:i,cat:c});save();renderMeals();renderManualList();renderShoppingList();
+  meals.push({name:n,items:i,cat:c});
+  save();renderMeals();renderManualList();renderShoppingList();
   mealName.value="";mealItems.value="";
 }
 
@@ -82,13 +124,15 @@ function editMeal(i){
   const n=prompt("Edit meal name:",m.name);if(n===null)return;
   const it=prompt("Edit recipe items:",m.items);if(it===null)return;
   const c=prompt("Edit category:",m.cat);if(c===null)return;
-  meals[i]={name:n.trim(),items:it.trim(),cat:c.trim()};save();renderMeals();renderManualList();renderShoppingList();
+  meals[i]={name:n.trim(),items:it.trim(),cat:c.trim()};
+  save();renderMeals();renderManualList();renderShoppingList();
 }
 
 function deleteMeal(i){
   const m=meals[i];if(!m)return;
   if(!confirm(`Delete "${m.name}"?`))return;
-  meals.splice(i,1);save();renderMeals();renderManualList();renderShoppingList();
+  meals.splice(i,1);
+  save();renderMeals();renderManualList();renderShoppingList();
 }
 
 /* ===== Select Meals ===== */
@@ -97,7 +141,8 @@ function renderManualList(){
   meals.forEach((m,i)=>{
     const row=document.createElement('div');row.className='card';
     const btn=document.createElement('button');
-    btn.className='meal-btn';if(manualSelected.has(String(i)))btn.classList.add('selected');
+    btn.className='meal-btn';
+    if(manualSelected.has(String(i)))btn.classList.add('selected');
     btn.textContent=m.name;
     btn.onclick=()=>{
       const k=String(i);
@@ -137,8 +182,11 @@ function renderShoppingList(){
     left.appendChild(input);left.appendChild(span);
 
     left.onclick=()=>{
-      if(checkedShopping.has(key)){checkedShopping.delete(key);input.checked=false;d.classList.remove('collected');}
-      else{checkedShopping.add(key);input.checked=true;d.classList.add('collected');}
+      if(checkedShopping.has(key)){
+        checkedShopping.delete(key);input.checked=false;d.classList.remove('collected');
+      } else {
+        checkedShopping.add(key);input.checked=true;d.classList.add('collected');
+      }
       saveShoppingState();
     };
 
@@ -147,9 +195,24 @@ function renderShoppingList(){
 }
 
 function clearAllShopping(){
-  clearedShopping=new Set();checkedShopping=new Set();saveShoppingState();
-  manualSelected=new Set();manualAdded=new Set();saveManualSelected();
+  clearedShopping=new Set();
+  checkedShopping=new Set();
+  saveShoppingState();
+  manualSelected=new Set();
+  manualAdded=new Set();
+  saveManualSelected();
   renderManualList();renderShoppingList();
 }
 
-window.onload=()=>{renderMeals();renderManualList();renderShoppingList();};
+window.onload=()=>{
+  renderMeals();
+  renderManualList();
+  renderShoppingList();
+
+  // Load saved theme
+  const saved = localStorage.getItem("savedTheme");
+  if (saved) {
+    applyTheme(saved);
+    themeIndex = themes.indexOf(saved);
+  }
+};
