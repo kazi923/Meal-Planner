@@ -182,6 +182,9 @@ function clearAllShopping() {
   renderShoppingList();
 }
 
-window.onload = () => {
+  window.onload = () => {
   renderMeals();
   renderManualList();
+  renderShoppingList();
+};
+
