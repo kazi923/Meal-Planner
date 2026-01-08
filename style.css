@@ -1,6 +1,7 @@
 :root{
-  --ocean:#006994;
-  --ocean-dark:#004766;
+  --btn-main:#006994;
+  --btn-main-dark:#004766;
+
   --grey-border:#dcdcdc;
   --text:#fff;
 }
@@ -47,12 +48,12 @@ h2{
   color:#fff;
 }
 
-/* Ocean theme */
+/* THEME BUTTONS NOW USE VARIABLES */
 .theme-ocean{
-  background:var(--ocean) !important;
+  background:var(--btn-main) !important;
 }
 .theme-ocean:hover{
-  background:var(--ocean-dark) !important;
+  background:var(--btn-main-dark) !important;
 }
 
 /* Inputs */
@@ -79,22 +80,21 @@ h2{
   color:#000;
 }
 
-/* Meal selection buttons */
+/* Meal & Essentials selection buttons */
 .meal-btn{
   width:100%;
   padding:12px;
   border-radius:8px;
-  border:1px solid var(--ocean);
-  background:var(--ocean) !important;
+  border:1px solid var(--btn-main);
+  background:var(--btn-main) !important;
   color:#fff;
   font-weight:600;
   cursor:pointer;
 }
 
-/* Selected meal = darker ocean */
 .meal-btn.selected{
-  background:var(--ocean-dark) !important;
-  border-color:var(--ocean-dark);
+  background:var(--btn-main-dark) !important;
+  border-color:var(--btn-main-dark);
   color:#fff;
 }
 
@@ -128,4 +128,76 @@ h2{
   padding:6px 10px;
   border-radius:6px;
   cursor:pointer;
+}
+
+/* ========================= */
+/* HAMBURGER MENU (H1)       */
+/* ========================= */
+
+.hamburger{
+  position:fixed;
+  top:15px;
+  right:15px;
+  font-size:32px;
+  font-weight:600;
+  cursor:pointer;
+  z-index:9999;
+  user-select:none;
+  color:#fff;
+}
+
+/* ========================= */
+/* DROPDOWN MENU (A1.1)      */
+/* ========================= */
+
+.dropdown-menu{
+  position:fixed;
+  top:60px;
+  right:15px;
+  background:rgba(255,255,255,0.95);
+  border:1px solid var(--grey-border);
+  border-radius:10px;
+  padding:10px;
+  width:220px;
+  display:none; /* AN2: instant open/close */
+  z-index:9998;
+  color:#000;
+}
+
+.dropdown-item{
+  padding:10px;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:600;
+  margin-bottom:6px;
+  background:#f2f2f2;
+  text-align:left;
+}
+
+.dropdown-item:hover{
+  background:#e0e0e0;
+}
+
+/* ========================= */
+/* THEME GRID (TS1 + T1)     */
+/* ========================= */
+
+.theme-grid{
+  display:grid;
+  grid-template-columns:repeat(6, 1fr);
+  gap:8px;
+  margin:10px 0;
+}
+
+.theme-circle{
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  cursor:pointer;
+  border:2px solid #fff;
+  box-shadow:0 0 3px rgba(0,0,0,0.4);
+}
+
+.theme-circle:hover{
+  transform:scale(1.1);
 }
