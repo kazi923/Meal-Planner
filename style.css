@@ -1,0 +1,130 @@
+:root{
+  --ocean:#006994;
+  --ocean-dark:#004766;
+  --grey-border:#dcdcdc;
+  --text:#fff;
+}
+
+/* Background */
+html,body{
+  margin:0;
+  padding:0;
+  background-image:url('background.jpg');
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  background-attachment:fixed;
+  font-family:Poppins,sans-serif;
+  color:#fff;
+}
+
+.page{
+  display:none;
+  padding:20px;
+  max-width:900px;
+  margin:0 auto;
+}
+.active{display:block;}
+
+h2{
+  text-align:center;
+  margin-bottom:20px;
+  color:#fff;
+}
+
+/* Main buttons */
+.btn{
+  display:block;
+  width:100%;
+  max-width:300px;
+  margin:10px auto;
+  padding:14px;
+  border:none;
+  border-radius:10px;
+  font-size:1rem;
+  font-weight:600;
+  cursor:pointer;
+  color:#fff;
+}
+
+/* Ocean theme */
+.theme-ocean{
+  background:var(--ocean) !important;
+}
+.theme-ocean:hover{
+  background:var(--ocean-dark) !important;
+}
+
+/* Inputs */
+.inputs{
+  display:grid;
+  gap:10px;
+  margin-bottom:20px;
+}
+.inputs input,
+.inputs select{
+  padding:12px;
+  border-radius:8px;
+  border:1px solid var(--grey-border);
+  font-size:1rem;
+}
+
+/* Cards */
+.card{
+  background:rgba(255,255,255,0.85);
+  border:1px solid var(--grey-border);
+  border-radius:10px;
+  padding:12px;
+  margin-bottom:10px;
+  color:#000;
+}
+
+/* Meal & Essentials selection buttons */
+.meal-btn{
+  width:100%;
+  padding:12px;
+  border-radius:8px;
+  border:1px solid var(--ocean);
+  background:var(--ocean) !important;
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.meal-btn.selected{
+  background:var(--ocean-dark) !important;
+  border-color:var(--ocean-dark);
+  color:#fff;
+}
+
+/* Shopping list */
+.shopping-list{
+  background:rgba(255,255,255,0.85);
+  border-radius:10px;
+  padding:12px;
+  border:1px solid var(--grey-border);
+  color:#000;
+}
+
+.shopping-item{
+  display:flex;
+  justify-content:space-between;
+  padding:8px 0;
+  border-bottom:1px solid var(--grey-border);
+}
+.shopping-item:last-child{border-bottom:none;}
+
+.collected{
+  opacity:0.4;
+  text-decoration:line-through;
+  transition:opacity 0.3s ease;
+}
+
+/* Tool buttons */
+.tool-btn{
+  background:#eee;
+  border:none;
+  padding:6px 10px;
+  border-radius:6px;
+  cursor:pointer;
+}
