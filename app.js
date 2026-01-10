@@ -1,4 +1,4 @@
-/* ===== app.js — Select Meals removed; helper bubble strictly placed only on Add Meals page ===== */
+/* ===== app.js — Select Essentials page removed; Essentials page remains fully functional ===== */
 
 /* ===== Immediately remove any Select Meals UI and prevent reinsertion ===== */
 (function removeSelectMealsForever(){
@@ -85,19 +85,19 @@ if (!Array.isArray(essentials) || essentials.length === 0) {
   setLS("essentials", essentials);
 }
 
+/* manualEssentials remains in state for shopping list logic even though the Select Essentials page is removed */
 let manualEssentials = new Set(getLS("manualEssentials", []));
 
 /* ===== DOM bindings (safe) ===== */
-let mealList, mealName, mealItems, essentialsList, essentialSelectList, shoppingItems;
+let mealList, mealName, mealItems, essentialsList, shoppingItems;
 function bindElements() {
   mealList = document.getElementById("mealList");
   mealName = document.getElementById("mealName");
   mealItems = document.getElementById("mealItems");
   essentialsList = document.getElementById("essentialsList");
-  essentialSelectList = document.getElementById("essentialSelectList");
   shoppingItems = document.getElementById("shoppingItems");
 
-  const required = ["mealList","mealName","mealItems","essentialsList","essentialSelectList","shoppingItems"];
+  const required = ["mealList","mealName","mealItems","essentialsList","shoppingItems"];
   required.forEach(id => {
     if (!document.getElementById(id)) console.warn(`Missing DOM element id="${id}"`);
   });
@@ -147,7 +147,6 @@ function nav(p) {
 
   if (p === "planner") renderMeals();
   if (p === "essentials") renderEssentials();
-  if (p === "selectEssentials") renderEssentialSelectList();
   if (p === "shop") renderShoppingList();
 }
 
@@ -330,6 +329,22 @@ function addEssential() {
   if (itemEl) itemEl.value = "";
 }
 
+/* ===== Edit essential item ===== */
+function editEssential(index) {
+  const current = essentials[index];
+  if (typeof current === "undefined") return;
+  const updated = prompt("Edit essential item name:", current);
+  if (updated === null) return;
+  const trimmed = updated.trim();
+  if (!trimmed) return alert("Item name cannot be empty");
+  essentials[index] = trimmed;
+  setLS("essentials", essentials);
+  mirror(["essentials"]);
+  renderEssentials();
+  renderShoppingList();
+}
+
+/* ===== renderEssentials: each item has Edit and Delete ===== */
 function renderEssentials() {
   const box = document.getElementById("essentialsList");
   if (!box) return;
@@ -347,55 +362,48 @@ function renderEssentials() {
     label.style.fontWeight = "600";
     label.style.padding = "8px 0";
 
+    const controls = document.createElement("div");
+    controls.style.display = "flex";
+    controls.style.gap = "8px";
+    controls.style.alignItems = "center";
+
+    const edit = document.createElement("button");
+    edit.textContent = "Edit";
+    edit.className = "tool-btn";
+    edit.onclick = () => {
+      editEssential(index);
+    };
+
     const del = document.createElement("button");
     del.textContent = "Delete";
     del.className = "tool-btn";
 
     del.onclick = () => {
+      // If deleting, also clear any manualEssentials references and update storage
       essentials.splice(index, 1);
       setLS("essentials", essentials);
       mirror(["essentials"]);
-      renderEssentials();
-    };
 
-    row.appendChild(label);
-    row.appendChild(del);
-    box.appendChild(row);
-  });
-}
-
-/* ===== Select Essentials ===== */
-function renderEssentialSelectList() {
-  const box = document.getElementById("essentialSelectList");
-  if (!box) return;
-  box.innerHTML = "";
-
-  essentials.forEach((item, index) => {
-    const row = document.createElement("div");
-    row.className = "card";
-
-    const btn = document.createElement("button");
-    btn.className = "meal-btn";
-    btn.textContent = item;
-
-    if (manualEssentials.has(String(index))) btn.classList.add("selected");
-
-    btn.onclick = () => {
-      const key = String(index);
-      clearedShopping.delete(norm(item));
-      saveShoppingState();
-
-      if (manualEssentials.has(key)) manualEssentials.delete(key);
-      else manualEssentials.add(key);
-
+      // Remove any manualEssentials entries that referenced this item index
+      const newManual = new Set();
+      manualEssentials.forEach(i => {
+        const iNum = Number(i);
+        if (iNum < index) newManual.add(String(iNum));
+        else if (iNum > index) newManual.add(String(iNum - 1));
+      });
+      manualEssentials = newManual;
       setLS("manualEssentials", [...manualEssentials]);
       mirror(["manualEssentials"]);
 
-      renderEssentialSelectList();
+      renderEssentials();
       renderShoppingList();
     };
 
-    row.appendChild(btn);
+    controls.appendChild(edit);
+    controls.appendChild(del);
+
+    row.appendChild(label);
+    row.appendChild(controls);
     box.appendChild(row);
   });
 }
@@ -422,6 +430,7 @@ function renderShoppingList() {
     });
   });
 
+  // manualEssentials still contributes to the shopping list even though the Select Essentials page is removed
   manualEssentials.forEach(i => {
     const item = essentials[+i];
     if (!item) return;
@@ -477,6 +486,7 @@ function renderShoppingList() {
       clearedShopping.add(key);
       saveShoppingState();
 
+      // If a manual essential matched this item, remove it
       manualEssentials.forEach(i => {
         const item = essentials[+i];
         if (!item) return;
@@ -511,26 +521,43 @@ function clearAllShopping() {
 }
 
 /* ===== Home button rename (scoped) =====
-   Renames "Add Meals" to "Add & Select Meals" only for buttons outside Add Meals area.
+   Adjusted to avoid referencing the removed Select Essentials page.
 */
 function renameHomeAddButtonScoped() {
   const candidates = Array.from(document.querySelectorAll("button, a, input[type=button]"));
-  for (const el of candidates) {
-    const txt = (el.textContent || el.value || "").trim();
-    if (txt !== "Add Meals") continue;
 
-    try {
-      const page = el.closest(".page") || el.closest("body");
-      if (page && (page.querySelector("#mealList") || page.querySelector("#mealName"))) continue;
-    } catch (e) {}
+  function renameIfOutside(originalText, newText, anchorSelectors) {
+    for (const el of candidates) {
+      const txt = (el.textContent || el.value || "").trim();
+      if (txt !== originalText) continue;
 
-    if (el.tagName === "INPUT") el.value = "Add & Select Meals";
-    else el.textContent = "Add & Select Meals";
-    break;
+      try {
+        const page = el.closest(".page") || el.closest("body");
+        if (page) {
+          for (const sel of anchorSelectors) {
+            if (page.querySelector(sel)) throw "inside";
+          }
+        }
+      } catch (e) {
+        if (e === "inside") continue;
+      }
+
+      if (el.tagName === "INPUT") el.value = newText;
+      else el.textContent = newText;
+      break;
+    }
   }
+
+  // Rename Add Meals on home/global areas (skip if inside Add Meals page)
+  renameIfOutside("Add Meals", "Add & Select Meals", ["#mealList", "#mealName"]);
+
+  // Rename Add Essentials on home/global areas (skip if inside Add Essentials page)
+  renameIfOutside("Add Essentials", "Add & Select Items", ["#essentialsList", "#essentialItem"]);
 }
 
-/* ===== Strict helper bubble insertion: only inside Add Meals page/container ===== */
+/* ===== Helper bubble insertion for Add Meals page =====
+   Ensures the small helper bubble is inserted after the centered button group (below both buttons).
+*/
 (function ensureAddMealHelper_StrictBubble() {
   const HELPER_CLASS = "add-meal-helper";
   const HELPER_TEXT = "Click on a meal below to add or remove in the Shopping List";
@@ -539,28 +566,55 @@ function renameHomeAddButtonScoped() {
     const helper = document.createElement("div");
     helper.className = HELPER_CLASS;
     helper.textContent = HELPER_TEXT;
-    // Inline bubble styling matched to button color (uses CSS variable if available)
     helper.style.display = "block";
-    helper.style.margin = "8px auto 0 auto";
-    helper.style.padding = "6px 12px";
+    helper.style.margin = "10px auto 0 auto";
+    helper.style.padding = "8px 14px";
     helper.style.borderRadius = "18px";
-    helper.style.background = "var(--accent, #0b76c2)"; // match accent color
+    helper.style.background = "var(--accent, #0b76c2)";
     helper.style.border = "1px solid rgba(0,0,0,0.06)";
     helper.style.boxShadow = "0 6px 14px rgba(11,118,194,0.12)";
     helper.style.maxWidth = "92%";
     helper.style.textAlign = "center";
     helper.style.fontSize = "13px";
-    helper.style.color = "#fff"; // white text to match buttons
+    helper.style.color = "#fff";
     helper.style.lineHeight = "1.2";
     helper.style.wordBreak = "break-word";
     return helper;
   }
 
+  function findButtonsContainer(addBtn) {
+    if (!addBtn) return null;
+    let node = addBtn.parentElement;
+    while (node && node !== document.body) {
+      const hasGo = Array.from(node.querySelectorAll("button, a, input[type=button]")).some(el => {
+        const t = (el.textContent || el.value || "").trim();
+        return /^Go to Shopping List$/i.test(t);
+      });
+      if (hasGo) return node;
+      node = node.parentElement;
+    }
+    return null;
+  }
+
   function insertBubble(addBtn) {
     if (!addBtn || !addBtn.parentElement) return false;
-    // avoid duplicates
-    if (addBtn.parentElement.querySelector(`.${HELPER_CLASS}`)) return true;
+    if (document.querySelector(`.${HELPER_CLASS}`)) return true;
+
     const bubble = createBubbleElement();
+    const container = findButtonsContainer(addBtn);
+    if (container && container.parentElement) {
+      if (container.nextSibling) container.parentElement.insertBefore(bubble, container.nextSibling);
+      else container.parentElement.appendChild(bubble);
+      return true;
+    }
+
+    const next = addBtn.nextElementSibling;
+    if (next && /^Go to Shopping List$/i.test((next.textContent || next.value || "").trim())) {
+      if (next.nextSibling) addBtn.parentElement.insertBefore(bubble, next.nextSibling);
+      else addBtn.parentElement.appendChild(bubble);
+      return true;
+    }
+
     if (addBtn.nextSibling) addBtn.parentElement.insertBefore(bubble, addBtn.nextSibling);
     else addBtn.parentElement.appendChild(bubble);
     return true;
@@ -578,31 +632,274 @@ function renameHomeAddButtonScoped() {
     const candidates = Array.from(document.querySelectorAll("button, input[type=button], a"));
     const addCandidates = candidates.filter(el => {
       const t = (el.textContent || el.value || "").trim();
-      return /^(?:\+?\s*Add Meal|Add Meals|Add)$/i.test(t);
+      return /^(?:\+?\s*Add Meal|Add Meal|Add Meals|Add)$/i.test(t);
     });
     return addCandidates.find(b => isInsideAddMealsArea(b)) || null;
   }
 
-  // Try immediate insertion
   const btn = findAddButtonInAddMealsArea();
   if (btn) insertBubble(btn);
 
-  // Observe DOM for dynamic insertion and insert only when the button is inside Add Meals area
   const observer = new MutationObserver(muts => {
     for (const m of muts) {
       for (const node of m.addedNodes) {
         if (node.nodeType !== 1) continue;
         if (/button|a|input/i.test(node.tagName)) {
           const t = (node.textContent || node.value || "").trim();
-          if (/^(?:\+?\s*Add Meal|Add Meals|Add)$/i.test(t) && isInsideAddMealsArea(node)) {
+          if (/^(?:\+?\s*Add Meal|Add Meal|Add Meals|Add)$/i.test(t) && isInsideAddMealsArea(node)) {
             if (insertBubble(node)) return;
           }
         }
         const descendants = node.querySelectorAll ? node.querySelectorAll("button, a, input[type=button]") : [];
         for (const d of descendants) {
           const t = (d.textContent || d.value || "").trim();
-          if (/^(?:\+?\s*Add Meal|Add Meals|Add)$/i.test(t) && isInsideAddMealsArea(d)) {
+          if (/^(?:\+?\s*Add Meal|Add Meal|Add Meals|Add)$/i.test(t) && isInsideAddMealsArea(d)) {
             if (insertBubble(d)) return;
+          }
+        }
+      }
+    }
+  });
+
+  observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
+})();
+
+/* ===== Centered Add Meal + Go to Shopping List controls on Meal Planner (header at top) =====
+   Places the "Meal Planner" header at the very top of the planner container,
+   removes duplicate planner title instances, and centers the Add controls below it.
+*/
+(function ensureHeaderAtTopAndCenteredControls() {
+  const GO_CLASS = "go-to-shop-btn";
+  const WRAPPER_CLASS = "add-meal-controls-centered";
+  const GO_LABEL = "Go to Shopping List";
+  const HEADER_TEXT = "Meal Planner";
+  const HEADER_CLASS = "planner-title-top";
+
+  function createGoButton() {
+    const btn = document.createElement("button");
+    btn.className = GO_CLASS + " tool-btn";
+    btn.type = "button";
+    btn.textContent = GO_LABEL;
+    btn.style.background = "var(--ocean, #006994)";
+    btn.style.color = "#fff";
+    btn.style.border = "1px solid rgba(0,0,0,0.06)";
+    btn.style.boxShadow = "0 6px 14px rgba(0,105,140,0.12)";
+    btn.style.padding = "12px 18px";
+    btn.style.borderRadius = "10px";
+    btn.style.fontSize = "15px";
+    btn.style.fontWeight = "700";
+    btn.style.cursor = "pointer";
+    btn.style.display = "inline-block";
+    btn.style.textAlign = "center";
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      try {
+        if (typeof nav === "function") nav("shop");
+        else {
+          const shopEl = document.getElementById("shop");
+          if (shopEl) {
+            document.querySelectorAll(".page").forEach(pg => pg.classList.remove("active"));
+            shopEl.classList.add("active");
+            if (typeof renderShoppingList === "function") renderShoppingList();
+          } else {
+            window.location.hash = "#shop";
+          }
+        }
+      } catch (err) {
+        console.error("Go to Shopping List navigation failed", err);
+      }
+    });
+    return btn;
+  }
+
+  function styleAddButtonToAccent(addBtn) {
+    try {
+      addBtn.style.background = "var(--accent, #0b76c2)";
+      addBtn.style.color = "#fff";
+      addBtn.style.border = "1px solid rgba(0,0,0,0.06)";
+      addBtn.style.boxShadow = "0 6px 14px rgba(11,118,194,0.12)";
+      addBtn.style.padding = "12px 18px";
+      addBtn.style.borderRadius = "10px";
+      addBtn.style.fontSize = "15px";
+      addBtn.style.fontWeight = "700";
+      addBtn.style.cursor = "pointer";
+      addBtn.style.display = "inline-block";
+      addBtn.style.textAlign = "center";
+      addBtn.style.float = "none";
+      addBtn.style.margin = "0";
+    } catch (e) {}
+  }
+
+  function isInsideAddMealsArea(el) {
+    try {
+      const page = el.closest(".page") || el.closest("body");
+      if (!page) return false;
+      return !!(page.querySelector("#mealList") || page.querySelector("#mealName"));
+    } catch (e) { return false; }
+  }
+
+  function findAddMealButton() {
+    const candidates = Array.from(document.querySelectorAll("button, input[type=button], a"));
+    const addCandidates = candidates.filter(el => {
+      const t = (el.textContent || el.value || "").trim();
+      return /^(?:\+?\s*Add Meal|Add Meal|Add Meals|Add)$/i.test(t);
+    });
+    return addCandidates.find(b => isInsideAddMealsArea(b)) || null;
+  }
+
+  function findPageLevelContainer(addBtn) {
+    const page = addBtn.closest(".page");
+    if (page) return page;
+    const main = addBtn.closest("main") || document.querySelector("main");
+    if (main) return main;
+    return document.body;
+  }
+
+  function removeExistingPlannerTitles(container) {
+    try {
+      // remove any elements that contain the exact header text inside the planner container
+      const candidates = Array.from(container.querySelectorAll("*")).filter(el => {
+        try { return (el.textContent || "").trim() === HEADER_TEXT; } catch { return false; }
+      });
+      for (const c of candidates) c.remove();
+    } catch (e) {}
+  }
+
+  function insertHeaderAtTop(container) {
+    // ensure single header at very top of container
+    removeExistingPlannerTitles(container);
+    let header = container.querySelector(`.${HEADER_CLASS}`);
+    if (!header) {
+      header = document.createElement("div");
+      header.className = HEADER_CLASS;
+      header.textContent = HEADER_TEXT;
+      header.style.width = "100%";
+      header.style.boxSizing = "border-box";
+      header.style.textAlign = "center";
+      header.style.fontSize = "18px";
+      header.style.fontWeight = "800";
+      header.style.color = "var(--text, #111)";
+      header.style.margin = "6px 0";
+      // insert at very top of container content
+      container.insertBefore(header, container.firstChild);
+    } else {
+      // ensure it's at the top
+      if (container.firstChild !== header) {
+        header.parentElement.removeChild(header);
+        container.insertBefore(header, container.firstChild);
+      }
+    }
+    return header;
+  }
+
+  function insertCenteredControls(addBtn) {
+    if (!addBtn || !addBtn.parentElement) return false;
+
+    // Reuse or create Go button
+    let goBtn = Array.from(document.querySelectorAll("button, input[type=button], a"))
+      .find(el => ((el.textContent || el.value || "").trim() === GO_LABEL) && isInsideAddMealsArea(el));
+    if (goBtn && !(goBtn instanceof HTMLButtonElement)) {
+      const newGo = createGoButton();
+      goBtn.parentElement.insertBefore(newGo, goBtn.nextSibling);
+      goBtn = newGo;
+    }
+    if (!goBtn) goBtn = createGoButton();
+
+    try {
+      const container = findPageLevelContainer(addBtn);
+
+      // Insert header at top of container
+      insertHeaderAtTop(container);
+
+      // Remove any stray planner header elements that might remain
+      removeExistingPlannerTitles(container);
+
+      // Create wrapper for the two buttons and insert below header
+      const wrapper = document.createElement("div");
+      wrapper.className = WRAPPER_CLASS;
+      wrapper.style.display = "flex";
+      wrapper.style.justifyContent = "center";
+      wrapper.style.alignItems = "center";
+      wrapper.style.gap = "12px";
+      wrapper.style.width = "100%";
+      wrapper.style.boxSizing = "border-box";
+      wrapper.style.margin = "12px 0";
+
+      // Insert wrapper after header
+      const headerNow = container.querySelector(`.${HEADER_CLASS}`);
+      if (headerNow && headerNow.nextSibling) container.insertBefore(wrapper, headerNow.nextSibling);
+      else container.insertBefore(wrapper, container.firstChild);
+
+      // Move addBtn and goBtn into wrapper (this removes them from previous parents)
+      wrapper.appendChild(addBtn);
+      wrapper.appendChild(goBtn);
+
+      // Style both buttons
+      styleAddButtonToAccent(addBtn);
+      goBtn.style.background = "var(--ocean, #006994)";
+      goBtn.style.color = "#fff";
+      goBtn.style.border = "1px solid rgba(0,0,0,0.06)";
+      goBtn.style.boxShadow = "0 6px 14px rgba(0,105,140,0.12)";
+      goBtn.style.padding = "12px 18px";
+      goBtn.style.borderRadius = "10px";
+      goBtn.style.fontSize = "15px";
+      goBtn.style.fontWeight = "700";
+      goBtn.style.cursor = "pointer";
+      goBtn.style.display = "inline-block";
+      goBtn.style.textAlign = "center";
+      goBtn.style.float = "none";
+      goBtn.style.margin = "0";
+
+      // Ensure helper bubble (if present) is after the wrapper
+      const bubble = document.querySelector(".add-meal-helper");
+      if (bubble) {
+        if (wrapper.nextSibling) wrapper.parentElement.insertBefore(bubble, wrapper.nextSibling);
+        else wrapper.parentElement.appendChild(bubble);
+      }
+    } catch (e) {
+      // fallback: insert goBtn after addBtn and style both
+      if (addBtn.nextSibling) addBtn.parentElement.insertBefore(goBtn, addBtn.nextSibling);
+      else addBtn.parentElement.appendChild(goBtn);
+      styleAddButtonToAccent(addBtn);
+      goBtn.style.background = "var(--ocean, #006994)";
+    }
+
+    return true;
+  }
+
+  // Try immediate insertion
+  const addBtn = (function findAddMealButton() {
+    const candidates = Array.from(document.querySelectorAll("button, input[type=button], a"));
+    const addCandidates = candidates.filter(el => {
+      const t = (el.textContent || el.value || "").trim();
+      return /^(?:\+?\s*Add Meal|Add Meal|Add Meals|Add)$/i.test(t);
+    });
+    return addCandidates.find(b => {
+      try {
+        const page = b.closest(".page") || document.body;
+        return !!(page.querySelector("#mealList") || page.querySelector("#mealName"));
+      } catch { return false; }
+    }) || null;
+  })();
+
+  if (addBtn) insertCenteredControls(addBtn);
+
+  // Observe DOM for dynamic insertion and insert only when the Add Meal button appears inside Add Meals area
+  const observer = new MutationObserver(muts => {
+    for (const m of muts) {
+      for (const node of m.addedNodes) {
+        if (node.nodeType !== 1) continue;
+        if (/button|a|input/i.test(node.tagName)) {
+          const t = (node.textContent || node.value || "").trim();
+          if (/^(?:\+?\s*Add Meal|Add Meal|Add Meals|Add)$/i.test(t) && isInsideAddMealsArea(node)) {
+            if (insertCenteredControls(node)) return;
+          }
+        }
+        const descendants = node.querySelectorAll ? node.querySelectorAll("button, a, input[type=button]") : [];
+        for (const d of descendants) {
+          const t = (d.textContent || d.value || "").trim();
+          if (/^(?:\+?\s*Add Meal|Add Meal|Add Meals|Add)$/i.test(t) && isInsideAddMealsArea(d)) {
+            if (insertCenteredControls(d)) return;
           }
         }
       }
@@ -615,12 +912,9 @@ function renameHomeAddButtonScoped() {
 /* ===== Init on load ===== */
 window.onload = () => {
   bindElements();
-  // scoped rename for Home button (won't affect Add Meals area)
   renameHomeAddButtonScoped();
-  // strict bubble insertion runs independently and will place helper only in Add Meals area
   renderMeals();
   renderEssentials();
-  renderEssentialSelectList();
   renderShoppingList();
 
   mirror([
