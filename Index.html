@@ -15,8 +15,7 @@
 
   <button class="btn theme-ocean" onclick="nav('planner')">Add Meals</button>
   <button class="btn theme-ocean" onclick="nav('select')">Select Meals</button>
-  <button class="btn theme-ocean" onclick="nav('essentials')">Add Essentials</button>
-  <button class="btn theme-ocean" onclick="nav('selectEssentials')">Select Essentials</button>
+  <button class="btn theme-ocean" onclick="nav('selectEssentials')">Add & Select Essentials</button>
   <button class="btn theme-ocean" onclick="nav('shop')">Shopping List</button>
 </div>
 
@@ -50,33 +49,24 @@
   <div id="manualList"></div>
 </div>
 
-<!-- SELECT ESSENTIALS PAGE -->
+<!-- ADD & SELECT ESSENTIALS PAGE (restored) -->
 <div id="selectEssentials" class="page">
-  <h2>Select Essentials</h2>
+  <h2>Add & Select Essentials</h2>
   <button class="btn theme-ocean" onclick="nav('home')">Home</button>
 
-  <div style="text-align:center;margin:10px 0;">
-    <button class="btn theme-ocean" onclick="nav('shop')">Go to Shopping List</button>
-  </div>
-
-  <div id="essentialSelectList"></div>
-</div>
-
-<!-- ESSENTIALS PAGE -->
-<div id="essentials" class="page">
-  <h2>Essentials</h2>
-  <button class="btn theme-ocean" onclick="nav('home')">Home</button>
-
-  <div class="inputs">
+  <!-- Add essentials input -->
+  <div class="inputs" style="margin-top:12px;">
     <input id="essentialItem" placeholder="Item (e.g. Milk, Bread, Coffee)"/>
   </div>
 
-  <div class="button-row" style="display:flex; gap:10px; justify-content:center;">
+  <!-- Buttons: add and go to shopping list -->
+  <div class="button-row" style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
     <button class="btn theme-ocean" onclick="addEssential()">+ Add Essential</button>
     <button class="btn theme-ocean" onclick="nav('shop')">Go to Shopping List</button>
   </div>
 
-  <div id="essentialsList"></div>
+  <!-- Select essentials list (click to toggle selection) -->
+  <div id="essentialSelectList" style="margin-top:14px;"></div>
 </div>
 
 <!-- SHOPPING LIST PAGE -->
@@ -86,7 +76,7 @@
   <div>
     <button class="btn theme-ocean" onclick="nav('home')">Home</button>
     <button class="btn theme-ocean" onclick="nav('select')">Select Meals</button>
-    <button class="btn theme-ocean" onclick="nav('selectEssentials')">Select Essentials</button>
+    <button class="btn theme-ocean" onclick="nav('selectEssentials')">Add & Select Essentials</button>
   </div>
 
   <div style="text-align:center;margin-bottom:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">

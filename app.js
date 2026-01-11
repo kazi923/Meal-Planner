@@ -1,6 +1,13 @@
-/* ===== app.js — Select Essentials page removed; Essentials page remains fully functional ===== */
+/* ===== app.js — Full updated file
+   - Adds info box to Add & Select Essentials page (id "selectEssentials", fallback "essentials")
+   - Recipe items appear inside each meal card, left-aligned, single-line under the meal name (ellipsis if too long)
+   - Add & Select Meals button on Shopping List links to planner (Add & Select Meals page)
+   - Slim info box placed on Add & Select Meals page (id "planner")
+   - Button sizing/color parity and placement preserved
+   - Existing meal/essentials/shopping logic retained
+*/
 
-/* ===== Immediately remove any Select Meals UI and prevent reinsertion ===== */
+/* ===== Immediately remove any stray Select Meals UI and prevent reinsertion ===== */
 (function removeSelectMealsForever(){
   function matchesAndRemove(el){
     if(!el || el.nodeType !== 1) return false;
@@ -27,30 +34,31 @@
   obs.observe(document.documentElement || document.body, { childList: true, subtree: true });
 })();
 
-/* ===== Init ===== */
+/* ===== Default data ===== */
 const defaultMeals = [
   { name: "Spaghetti Bolognese", items: "Pasta, Minced Beef, Tomato Sauce, Garlic, Onion" },
   { name: "Grilled Salmon", items: "Salmon Fillet, Lemon, Olive Oil, Herbs" },
   { name: "Chicken Curry", items: "Chicken, Curry Paste, Coconut Milk, Rice" },
   { name: "Vegetable Stir Fry", items: "Broccoli, Carrots, Peppers, Soy Sauce, Noodles" },
   { name: "Beef Tacos", items: "Taco Shells, Beef, Lettuce, Tomato, Cheese" },
-  { name: "Margherita Pizza", items: "Pizza Base, Tomato Sauce, Mozzarella, Basil" },
-  { name: "Shepherd's Pie", items: "Minced Lamb, Potatoes, Carrots, Peas, Gravy" },
-  { name: "Lamb Steaks with Chips and peas", items: "Lamb Steaks, Chips, Peas, Gravy" }
+  { name: "Margherita Pizza", items: "Pizza Base, Tomato Sauce, Mozzarella, Basil" }
 ];
 
-/* --- LocalStorage helpers --- */
+const defaultEssentials = [
+  "Milk","Bread","Coffee","Sugar","Cereal","Butter","Toilet roll",
+  "Toothpaste","Shampoo","Soap","Cheese","Ham","Bananas","Orange Juice"
+];
+
+/* ===== LocalStorage helpers ===== */
 const setLS = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 const getLS = (k, fallback) => {
   try {
     const v = localStorage.getItem(k);
     return v === null ? fallback : JSON.parse(v);
-  } catch {
-    return fallback;
-  }
+  } catch { return fallback; }
 };
 
-/* --- Mirror helper (centralized) --- */
+/* ===== Mirror helper (stub for external sync) ===== */
 function mirror(keys) {
   if (typeof syncStorageToIndexedDB === "function") syncStorageToIndexedDB(keys);
 }
@@ -68,36 +76,31 @@ if (!Array.isArray(plan) || plan.length !== 7) {
   setLS("plan", plan);
 }
 
+let essentials = getLS("essentials", null);
+if (!Array.isArray(essentials) || essentials.length === 0) {
+  essentials = defaultEssentials.slice();
+  setLS("essentials", essentials);
+}
+
+/* manual selections and shopping state */
 let manualSelected = new Set(getLS("manualSelected", []));
+let manualEssentials = new Set(getLS("manualEssentials", []));
 let clearedShopping = new Set(getLS("clearedShopping", []));
 let checkedShopping = new Set(getLS("checkedShopping", []));
 let planSnapshot = localStorage.getItem("planSnapshot") || null;
 
-let essentials = getLS("essentials", null);
-if (!Array.isArray(essentials) || essentials.length === 0) {
-  essentials = [
-    "Milk","Toilet roll","Coffee","Sugar","Cereal","Bread","Butter",
-    "Toothpaste","Peanut Butter","Biscuits","Chocolate Buttons",
-    "Cheese","Ham","Red Sauce","Brown Sauce","BBQ Sauce",
-    "Bananas","Grapes","Shampoo","Soap","Conditioner",
-    "Crisps","Protein Bars","Orange Juice","Blackcurrant Juice"
-  ];
-  setLS("essentials", essentials);
-}
-
-/* manualEssentials remains in state for shopping list logic even though the Select Essentials page is removed */
-let manualEssentials = new Set(getLS("manualEssentials", []));
-
-/* ===== DOM bindings (safe) ===== */
-let mealList, mealName, mealItems, essentialsList, shoppingItems;
+/* ===== DOM bindings ===== */
+let mealList, mealName, mealItems, essentialsList, essentialItem, essentialSelectList, shoppingItems;
 function bindElements() {
   mealList = document.getElementById("mealList");
   mealName = document.getElementById("mealName");
   mealItems = document.getElementById("mealItems");
   essentialsList = document.getElementById("essentialsList");
+  essentialItem = document.getElementById("essentialItem");
+  essentialSelectList = document.getElementById("essentialSelectList");
   shoppingItems = document.getElementById("shoppingItems");
 
-  const required = ["mealList","mealName","mealItems","essentialsList","shoppingItems"];
+  const required = ["mealList","mealName","mealItems","shoppingItems"];
   required.forEach(id => {
     if (!document.getElementById(id)) console.warn(`Missing DOM element id="${id}"`);
   });
@@ -109,19 +112,25 @@ const saveManualSelected = () => {
   mirror(["manualSelected"]);
 };
 
+const saveManualEssentials = () => {
+  setLS("manualEssentials", [...manualEssentials]);
+  mirror(["manualEssentials"]);
+};
+
 const saveShoppingState = () => {
   setLS("clearedShopping", [...clearedShopping]);
   setLS("checkedShopping", [...checkedShopping]);
-  mirror(["clearedShopping", "checkedShopping"]);
+  mirror(["clearedShopping","checkedShopping"]);
 };
 
 const computePlanSnapshot = () => JSON.stringify(plan.map(p => (p ? p.name + "||" + p.items : null)));
 
-function save() {
+function saveAll() {
   setLS("meals", meals);
   setLS("plan", plan);
   setLS("essentials", essentials);
-  setLS("manualEssentials", [...manualEssentials]);
+  saveManualEssentials();
+  saveManualSelected();
 
   const snap = computePlanSnapshot();
   if (snap !== planSnapshot) {
@@ -132,13 +141,12 @@ function save() {
     saveShoppingState();
   }
 
-  mirror(["meals", "plan", "essentials", "manualEssentials", "planSnapshot"]);
-
+  mirror(["meals","plan","essentials","manualEssentials","manualSelected","planSnapshot"]);
   const shopEl = document.getElementById("shop");
   if (shopEl && shopEl.classList.contains("active")) renderShoppingList();
 }
 
-/* ===== Navigation simplified (Select page removed) ===== */
+/* ===== Navigation ===== */
 function nav(p) {
   document.querySelectorAll(".page").forEach(pg => pg.classList.remove("active"));
   const el = document.getElementById(p);
@@ -146,28 +154,51 @@ function nav(p) {
   el.classList.add("active");
 
   if (p === "planner") renderMeals();
+  if (p === "select") renderManualList();
+  if (p === "selectEssentials") renderEssentialSelectList();
   if (p === "essentials") renderEssentials();
   if (p === "shop") renderShoppingList();
 }
 
-/* ===== escapeHtml ===== */
-const escapeHtml = s =>
-  s ? s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") : "";
+/* ===== Visual helpers: card styling & normalization ===== */
+function norm(s) {
+  return s ? s.toLowerCase().trim().replace(/[^\w\s]/g, "").replace(/s$/, "") : "";
+}
 
-/* ===== Meals ===== */
+function styleCardAsButton(cardEl, variant = "accent") {
+  try {
+    const root = getComputedStyle(document.documentElement);
+    const accent = root.getPropertyValue("--accent").trim() || "#0b76c2";
+    const ocean = root.getPropertyValue("--ocean").trim() || "#006994";
+    const bg = variant === "ocean" ? ocean : accent;
+    cardEl.style.background = bg;
+    cardEl.style.color = "#fff";
+    cardEl.style.border = "1px solid rgba(0,0,0,0.06)";
+    cardEl.style.boxShadow = "0 6px 14px rgba(0,0,0,0.06)";
+    cardEl.style.padding = "12px";
+    cardEl.style.borderRadius = "10px";
+  } catch (e) {
+    cardEl.style.background = variant === "ocean" ? "#006994" : "#0b76c2";
+    cardEl.style.color = "#fff";
+    cardEl.style.borderRadius = "10px";
+    cardEl.style.padding = "12px";
+  }
+}
+
+/* ===== Meals: add / render / edit / delete ===== */
 function addMeal() {
   const n = (mealName && mealName.value || "").trim();
   const i = (mealItems && mealItems.value || "").trim();
   if (!n || !i) return alert("Enter meal name and items");
   meals.push({ name: n, items: i });
-  save();
+  saveAll();
   renderMeals();
   renderShoppingList();
   if (mealName) mealName.value = "";
   if (mealItems) mealItems.value = "";
 }
 
-/* ===== renderMeals: selectable meal cards ===== */
+/* Render meals: recipe items appear inside the card under the meal name in one line (ellipsis) */
 function renderMeals() {
   if (!mealList) return;
   mealList.innerHTML = "";
@@ -176,33 +207,30 @@ function renderMeals() {
     const idx = String(x);
     const card = document.createElement("div");
     card.className = "meal-card card";
-    if (manualSelected.has(idx)) card.classList.add("selected");
+    styleCardAsButton(card, "accent");
 
-    card.onclick = () => {
-      if (manualSelected.has(idx)) manualSelected.delete(idx);
-      else manualSelected.add(idx);
+    // selected visual state
+    if (manualSelected.has(idx)) {
+      card.style.filter = "brightness(0.88)";
+      card.style.borderColor = "rgba(0,0,0,0.08)";
+    }
 
-      m.items.split(",").forEach(it => clearedShopping.delete(norm(it)));
-      saveManualSelected();
-      saveShoppingState();
-      renderMeals();
-      renderShoppingList();
-    };
+    // layout: left area (tick + content) and right controls
+    card.style.display = "flex";
+    card.style.alignItems = "center";
+    card.style.justifyContent = "space-between";
+    card.style.gap = "12px";
 
+    // left: tick + content (content stacks title and recipe)
     const left = document.createElement("div");
-    left.style.flex = "1";
     left.style.display = "flex";
-    left.style.flexDirection = "column";
-    left.style.gap = "6px";
     left.style.alignItems = "flex-start";
-
-    const titleRow = document.createElement("div");
-    titleRow.style.display = "flex";
-    titleRow.style.alignItems = "center";
-    titleRow.style.gap = "8px";
+    left.style.gap = "10px";
+    left.style.flex = "1";
+    left.style.minWidth = "0"; // allow ellipsis
 
     const checkBadge = document.createElement("div");
-    checkBadge.className = "check-badge";
+    checkBadge.className = "meal-check-badge";
     checkBadge.style.width = "28px";
     checkBadge.style.height = "28px";
     checkBadge.style.borderRadius = "50%";
@@ -211,86 +239,128 @@ function renderMeals() {
     checkBadge.style.justifyContent = "center";
     checkBadge.style.fontWeight = "700";
     checkBadge.style.color = "#fff";
-    checkBadge.style.background = "rgba(255,255,255,0.15)";
-    checkBadge.style.border = "2px solid rgba(255,255,255,0.12)";
-    checkBadge.textContent = manualSelected.has(idx) ? "✓" : "";
-
     if (manualSelected.has(idx)) {
-      checkBadge.style.background = "var(--ocean, #006994)";
-      checkBadge.style.borderColor = "rgba(0,0,0,0.06)";
+      checkBadge.style.background = "rgba(255,255,255,0.18)";
+      checkBadge.textContent = "✓";
+    } else {
+      checkBadge.style.background = "transparent";
+      checkBadge.style.border = "2px solid rgba(255,255,255,0.18)";
+      checkBadge.textContent = "";
     }
+
+    // content container stacks title and recipe
+    const content = document.createElement("div");
+    content.style.display = "flex";
+    content.style.flexDirection = "column";
+    content.style.flex = "1";
+    content.style.minWidth = "0"; // allow child ellipsis
 
     const title = document.createElement("div");
     title.textContent = m.name;
     title.style.fontWeight = "700";
     title.style.fontSize = "16px";
-    title.style.cursor = "pointer";
+    title.style.color = "#fff";
+    title.style.whiteSpace = "nowrap";
+    title.style.overflow = "hidden";
+    title.style.textOverflow = "ellipsis";
 
-    titleRow.appendChild(checkBadge);
-    titleRow.appendChild(title);
-    left.appendChild(titleRow);
+    // recipe line: hidden by default; when visible it sits under the title in one line with ellipsis
+    const recipeDiv = document.createElement("div");
+    recipeDiv.id = `r${x}`;
+    recipeDiv.className = "recipe";
+    recipeDiv.style.display = "none"; // toggled by Show Recipe
+    recipeDiv.style.marginTop = "6px";
+    recipeDiv.style.color = "rgba(255,255,255,0.92)";
+    recipeDiv.style.fontSize = "13px";
+    recipeDiv.style.fontWeight = "500";
+    recipeDiv.style.whiteSpace = "nowrap";
+    recipeDiv.style.overflow = "hidden";
+    recipeDiv.style.textOverflow = "ellipsis";
+    recipeDiv.style.maxWidth = "100%";
+    recipeDiv.textContent = m.items.split(",").map(s => s.trim()).join(", ");
 
+    content.appendChild(title);
+    content.appendChild(recipeDiv);
+
+    left.appendChild(checkBadge);
+    left.appendChild(content);
+
+    // right-side controls (Show Recipe toggles recipeDiv display)
     const controls = document.createElement("div");
+    controls.className = "meal-controls";
     controls.style.display = "flex";
     controls.style.gap = "8px";
     controls.style.alignItems = "center";
+    controls.style.flex = "none";
 
     const showBtn = document.createElement("button");
     showBtn.className = "tool-btn";
     showBtn.textContent = "Show Recipe";
-    showBtn.style.background = "var(--ocean, #006994)";
+    showBtn.style.background = "rgba(255,255,255,0.12)";
     showBtn.style.color = "#fff";
     showBtn.style.border = "none";
     showBtn.style.padding = "6px 8px";
     showBtn.style.borderRadius = "6px";
     showBtn.onclick = (e) => {
       e.stopPropagation();
-      toggleRecipe(`r${x}`);
+      // toggle recipe visibility inside the card (one-line)
+      if (recipeDiv.style.display === "block") {
+        recipeDiv.style.display = "none";
+        showBtn.textContent = "Show Recipe";
+      } else {
+        recipeDiv.style.display = "block";
+        showBtn.textContent = "Hide Recipe";
+      }
     };
 
     const editBtn = document.createElement("button");
     editBtn.className = "tool-btn";
     editBtn.textContent = "Edit";
+    editBtn.style.background = "rgba(255,255,255,0.08)";
+    editBtn.style.color = "#fff";
     editBtn.style.padding = "6px 8px";
     editBtn.style.borderRadius = "6px";
-    editBtn.onclick = (e) => {
-      e.stopPropagation();
-      editMeal(x);
-    };
+    editBtn.onclick = (e) => { e.stopPropagation(); editMeal(x); };
 
     const delBtn = document.createElement("button");
     delBtn.className = "tool-btn";
     delBtn.textContent = "Delete";
+    delBtn.style.background = "rgba(255,255,255,0.08)";
+    delBtn.style.color = "#fff";
     delBtn.style.padding = "6px 8px";
     delBtn.style.borderRadius = "6px";
-    delBtn.onclick = (e) => {
-      e.stopPropagation();
-      deleteMeal(x);
-    };
+    delBtn.onclick = (e) => { e.stopPropagation(); deleteMeal(x); };
 
     controls.appendChild(showBtn);
     controls.appendChild(editBtn);
     controls.appendChild(delBtn);
 
-    const recipeDiv = document.createElement("div");
-    recipeDiv.id = `r${x}`;
-    recipeDiv.className = "recipe";
-    recipeDiv.style.display = "none";
-    recipeDiv.style.marginTop = "8px";
-    recipeDiv.textContent = m.items;
+    // clicking the card (outside controls) toggles selection for shopping list
+    card.onclick = (e) => {
+      if (e.target.closest && e.target.closest(".meal-controls")) return;
+      if (manualSelected.has(idx)) manualSelected.delete(idx);
+      else manualSelected.add(idx);
+
+      // ensure items reappear in shopping list if previously cleared
+      m.items.split(",").forEach(it => clearedShopping.delete(norm(it)));
+
+      saveManualSelected();
+      saveShoppingState();
+      renderMeals();
+      renderShoppingList();
+    };
 
     card.appendChild(left);
     card.appendChild(controls);
-    card.appendChild(recipeDiv);
     mealList.appendChild(card);
   });
 }
 
-const toggleRecipe = id => {
+function toggleRecipe(id) {
   const e = document.getElementById(id);
   if (!e) return;
   e.style.display = e.style.display === "block" ? "none" : "block";
-};
+}
 
 function editMeal(i) {
   const m = meals[i];
@@ -300,7 +370,7 @@ function editMeal(i) {
   const it = prompt("Edit recipe items:", m.items);
   if (it === null) return;
   meals[i] = { name: n.trim(), items: it.trim() };
-  save();
+  saveAll();
   renderMeals();
   renderShoppingList();
 }
@@ -310,26 +380,24 @@ function deleteMeal(i) {
   if (!m) return;
   if (!confirm(`Delete "${m.name}"?`)) return;
   meals.splice(i, 1);
-  save();
+  saveAll();
   renderMeals();
   renderShoppingList();
 }
 
-/* ===== Essentials ===== */
+/* ===== Essentials: add / render / edit / delete / select ===== */
 function addEssential() {
-  const itemEl = document.getElementById("essentialItem");
-  const item = (itemEl && itemEl.value || "").trim();
-  if (!item) return alert("Enter an item");
-
-  essentials.push(item);
+  const val = (essentialItem && essentialItem.value || "").trim();
+  if (!val) return alert("Enter an item");
+  essentials.push(val);
   setLS("essentials", essentials);
   mirror(["essentials"]);
-
+  if (essentialItem) essentialItem.value = "";
   renderEssentials();
-  if (itemEl) itemEl.value = "";
+  renderEssentialSelectList();
+  renderShoppingList();
 }
 
-/* ===== Edit essential item ===== */
 function editEssential(index) {
   const current = essentials[index];
   if (typeof current === "undefined") return;
@@ -341,26 +409,27 @@ function editEssential(index) {
   setLS("essentials", essentials);
   mirror(["essentials"]);
   renderEssentials();
+  renderEssentialSelectList();
   renderShoppingList();
 }
 
-/* ===== renderEssentials: each item has Edit and Delete ===== */
 function renderEssentials() {
-  const box = document.getElementById("essentialsList");
-  if (!box) return;
-  box.innerHTML = "";
-
+  if (!essentialsList) return;
+  essentialsList.innerHTML = "";
   essentials.forEach((item, index) => {
     const row = document.createElement("div");
     row.className = "card";
+    styleCardAsButton(row, "accent");
     row.style.display = "flex";
     row.style.justifyContent = "space-between";
     row.style.alignItems = "center";
+    row.style.marginBottom = "8px";
 
     const label = document.createElement("div");
     label.textContent = item;
     label.style.fontWeight = "600";
     label.style.padding = "8px 0";
+    label.style.color = "#fff";
 
     const controls = document.createElement("div");
     controls.style.display = "flex";
@@ -370,21 +439,20 @@ function renderEssentials() {
     const edit = document.createElement("button");
     edit.textContent = "Edit";
     edit.className = "tool-btn";
-    edit.onclick = () => {
-      editEssential(index);
-    };
+    edit.style.background = "rgba(255,255,255,0.08)";
+    edit.style.color = "#fff";
+    edit.onclick = () => editEssential(index);
 
     const del = document.createElement("button");
     del.textContent = "Delete";
     del.className = "tool-btn";
-
+    del.style.background = "rgba(255,255,255,0.08)";
+    del.style.color = "#fff";
     del.onclick = () => {
-      // If deleting, also clear any manualEssentials references and update storage
       essentials.splice(index, 1);
       setLS("essentials", essentials);
       mirror(["essentials"]);
-
-      // Remove any manualEssentials entries that referenced this item index
+      // adjust manualEssentials indices
       const newManual = new Set();
       manualEssentials.forEach(i => {
         const iNum = Number(i);
@@ -392,10 +460,9 @@ function renderEssentials() {
         else if (iNum > index) newManual.add(String(iNum - 1));
       });
       manualEssentials = newManual;
-      setLS("manualEssentials", [...manualEssentials]);
-      mirror(["manualEssentials"]);
-
+      saveManualEssentials();
       renderEssentials();
+      renderEssentialSelectList();
       renderShoppingList();
     };
 
@@ -404,15 +471,150 @@ function renderEssentials() {
 
     row.appendChild(label);
     row.appendChild(controls);
-    box.appendChild(row);
+    essentialsList.appendChild(row);
   });
 }
 
-/* ===== Shopping List ===== */
-function norm(s) {
-  return s ? s.toLowerCase().trim().replace(/[^\w\s]/g, "").replace(/s$/, "") : "";
+/* ===== Updated: renderEssentialSelectList uses circular tick like meals ===== */
+function renderEssentialSelectList() {
+  if (!essentialSelectList) return;
+  essentialSelectList.innerHTML = "";
+  essentials.forEach((item, index) => {
+    const key = String(index);
+    const row = document.createElement("div");
+    row.className = "card";
+    styleCardAsButton(row, "ocean");
+    row.style.marginBottom = "8px";
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.justifyContent = "space-between";
+    row.style.padding = "10px 12px";
+
+    // left area: circular tick + label
+    const left = document.createElement("div");
+    left.style.display = "flex";
+    left.style.alignItems = "center";
+    left.style.gap = "10px";
+    left.style.flex = "1";
+
+    const checkBadge = document.createElement("div");
+    checkBadge.className = "essential-check-badge";
+    checkBadge.style.width = "28px";
+    checkBadge.style.height = "28px";
+    checkBadge.style.borderRadius = "50%";
+    checkBadge.style.display = "inline-flex";
+    checkBadge.style.alignItems = "center";
+    checkBadge.style.justifyContent = "center";
+    checkBadge.style.fontWeight = "700";
+    checkBadge.style.color = "#fff";
+    if (manualEssentials.has(key)) {
+      checkBadge.style.background = "rgba(255,255,255,0.18)";
+      checkBadge.textContent = "✓";
+    } else {
+      checkBadge.style.background = "transparent";
+      checkBadge.style.border = "2px solid rgba(255,255,255,0.18)";
+      checkBadge.textContent = "";
+    }
+
+    const label = document.createElement("div");
+    label.textContent = item;
+    label.style.fontWeight = "700";
+    label.style.color = "#fff";
+    label.style.flex = "1";
+    label.style.textAlign = "left";
+
+    left.appendChild(checkBadge);
+    left.appendChild(label);
+
+    // right area: small tool buttons
+    const controls = document.createElement("div");
+    controls.style.display = "flex";
+    controls.style.gap = "8px";
+    controls.style.alignItems = "center";
+
+    const edit = document.createElement("button");
+    edit.textContent = "Edit";
+    edit.className = "tool-btn";
+    edit.style.background = "rgba(255,255,255,0.08)";
+    edit.style.color = "#fff";
+    edit.style.padding = "6px 8px";
+    edit.style.borderRadius = "6px";
+    edit.onclick = (e) => { e.stopPropagation(); editEssential(index); };
+
+    const del = document.createElement("button");
+    del.textContent = "Delete";
+    del.className = "tool-btn";
+    del.style.background = "rgba(255,255,255,0.08)";
+    del.style.color = "#fff";
+    del.style.padding = "6px 8px";
+    del.style.borderRadius = "6px";
+    del.onclick = (e) => {
+      e.stopPropagation();
+      essentials.splice(index, 1);
+      setLS("essentials", essentials);
+      mirror(["essentials"]);
+      // adjust manualEssentials indices
+      const newManual = new Set();
+      manualEssentials.forEach(i => {
+        const iNum = Number(i);
+        if (iNum < index) newManual.add(String(iNum));
+        else if (iNum > index) newManual.add(String(iNum - 1));
+      });
+      manualEssentials = newManual;
+      saveManualEssentials();
+      renderEssentials();
+      renderEssentialSelectList();
+      renderShoppingList();
+    };
+
+    controls.appendChild(edit);
+    controls.appendChild(del);
+
+    // clicking the row toggles selection
+    row.onclick = (e) => {
+      if (e.target.closest && e.target.closest("button")) return;
+      if (manualEssentials.has(key)) manualEssentials.delete(key);
+      else manualEssentials.add(key);
+
+      // ensure item reappears in shopping list if previously cleared
+      clearedShopping.delete(norm(item));
+
+      saveManualEssentials();
+      saveShoppingState();
+      renderEssentialSelectList();
+      renderShoppingList();
+    };
+
+    if (manualEssentials.has(key)) row.style.filter = "brightness(0.88)";
+
+    row.appendChild(left);
+    row.appendChild(controls);
+    essentialSelectList.appendChild(row);
+  });
 }
 
+/* ===== Manual meals list (Select Meals page) ===== */
+function renderManualList() {
+  const box = document.getElementById("manualList");
+  if (!box) return;
+  box.innerHTML = "";
+  meals.forEach((m, i) => {
+    const btn = document.createElement("button");
+    btn.className = "meal-btn";
+    btn.textContent = m.name;
+    if (manualSelected.has(String(i))) btn.classList.add("selected");
+    btn.onclick = () => {
+      if (manualSelected.has(String(i))) manualSelected.delete(String(i));
+      else manualSelected.add(String(i));
+      saveManualSelected();
+      renderManualList();
+      renderShoppingList();
+    };
+    box.appendChild(btn);
+  });
+}
+
+/* ===== Shopping list rendering & interactions ===== */
 function renderShoppingList() {
   if (!shoppingItems) return;
   const seen = new Map();
@@ -430,7 +632,6 @@ function renderShoppingList() {
     });
   });
 
-  // manualEssentials still contributes to the shopping list even though the Select Essentials page is removed
   manualEssentials.forEach(i => {
     const item = essentials[+i];
     if (!item) return;
@@ -449,6 +650,7 @@ function renderShoppingList() {
     left.style.display = "flex";
     left.style.gap = "8px";
     left.style.cursor = "pointer";
+    left.style.alignItems = "center";
 
     const input = document.createElement("input");
     input.type = "checkbox";
@@ -485,18 +687,13 @@ function renderShoppingList() {
       e.stopPropagation();
       clearedShopping.add(key);
       saveShoppingState();
-
-      // If a manual essential matched this item, remove it
+      // remove matching manualEssentials entries
       manualEssentials.forEach(i => {
         const item = essentials[+i];
         if (!item) return;
         if (item.toLowerCase() === pretty.toLowerCase()) manualEssentials.delete(i);
       });
-
-      setLS("manualEssentials", [...manualEssentials]);
-      mirror(["manualEssentials", "clearedShopping", "checkedShopping"]);
-
-      renderEssentials();
+      saveManualEssentials();
       renderShoppingList();
     };
 
@@ -513,24 +710,19 @@ function clearAllShopping() {
   manualSelected = new Set();
   manualEssentials = new Set();
   saveManualSelected();
-  setLS("manualEssentials", []);
-  mirror(["manualSelected", "manualEssentials", "clearedShopping", "checkedShopping"]);
+  saveManualEssentials();
+  mirror(["manualSelected","manualEssentials","clearedShopping","checkedShopping"]);
   renderMeals();
-  renderEssentials();
   renderShoppingList();
 }
 
-/* ===== Home button rename (scoped) =====
-   Adjusted to avoid referencing the removed Select Essentials page.
-*/
+/* ===== Home button rename (scoped) ===== */
 function renameHomeAddButtonScoped() {
   const candidates = Array.from(document.querySelectorAll("button, a, input[type=button]"));
-
   function renameIfOutside(originalText, newText, anchorSelectors) {
     for (const el of candidates) {
       const txt = (el.textContent || el.value || "").trim();
       if (txt !== originalText) continue;
-
       try {
         const page = el.closest(".page") || el.closest("body");
         if (page) {
@@ -538,181 +730,35 @@ function renameHomeAddButtonScoped() {
             if (page.querySelector(sel)) throw "inside";
           }
         }
-      } catch (e) {
-        if (e === "inside") continue;
-      }
-
+      } catch (e) { if (e === "inside") continue; }
       if (el.tagName === "INPUT") el.value = newText;
       else el.textContent = newText;
       break;
     }
   }
-
-  // Rename Add Meals on home/global areas (skip if inside Add Meals page)
   renameIfOutside("Add Meals", "Add & Select Meals", ["#mealList", "#mealName"]);
-
-  // Rename Add Essentials on home/global areas (skip if inside Add Essentials page)
-  renameIfOutside("Add Essentials", "Add & Select Items", ["#essentialsList", "#essentialItem"]);
+  renameIfOutside("Add Essentials", "Add & Select Items", ["#essentialSelectList", "#essentialItem"]);
 }
 
-/* ===== Helper bubble insertion for Add Meals page =====
-   Ensures the small helper bubble is inserted after the centered button group (below both buttons).
-*/
-(function ensureAddMealHelper_StrictBubble() {
-  const HELPER_CLASS = "add-meal-helper";
-  const HELPER_TEXT = "Click on a meal below to add or remove in the Shopping List";
-
-  function createBubbleElement() {
-    const helper = document.createElement("div");
-    helper.className = HELPER_CLASS;
-    helper.textContent = HELPER_TEXT;
-    helper.style.display = "block";
-    helper.style.margin = "10px auto 0 auto";
-    helper.style.padding = "8px 14px";
-    helper.style.borderRadius = "18px";
-    helper.style.background = "var(--accent, #0b76c2)";
-    helper.style.border = "1px solid rgba(0,0,0,0.06)";
-    helper.style.boxShadow = "0 6px 14px rgba(11,118,194,0.12)";
-    helper.style.maxWidth = "92%";
-    helper.style.textAlign = "center";
-    helper.style.fontSize = "13px";
-    helper.style.color = "#fff";
-    helper.style.lineHeight = "1.2";
-    helper.style.wordBreak = "break-word";
-    return helper;
-  }
-
-  function findButtonsContainer(addBtn) {
-    if (!addBtn) return null;
-    let node = addBtn.parentElement;
-    while (node && node !== document.body) {
-      const hasGo = Array.from(node.querySelectorAll("button, a, input[type=button]")).some(el => {
-        const t = (el.textContent || el.value || "").trim();
-        return /^Go to Shopping List$/i.test(t);
-      });
-      if (hasGo) return node;
-      node = node.parentElement;
-    }
-    return null;
-  }
-
-  function insertBubble(addBtn) {
-    if (!addBtn || !addBtn.parentElement) return false;
-    if (document.querySelector(`.${HELPER_CLASS}`)) return true;
-
-    const bubble = createBubbleElement();
-    const container = findButtonsContainer(addBtn);
-    if (container && container.parentElement) {
-      if (container.nextSibling) container.parentElement.insertBefore(bubble, container.nextSibling);
-      else container.parentElement.appendChild(bubble);
-      return true;
-    }
-
-    const next = addBtn.nextElementSibling;
-    if (next && /^Go to Shopping List$/i.test((next.textContent || next.value || "").trim())) {
-      if (next.nextSibling) addBtn.parentElement.insertBefore(bubble, next.nextSibling);
-      else addBtn.parentElement.appendChild(bubble);
-      return true;
-    }
-
-    if (addBtn.nextSibling) addBtn.parentElement.insertBefore(bubble, addBtn.nextSibling);
-    else addBtn.parentElement.appendChild(bubble);
-    return true;
-  }
-
-  function isInsideAddMealsArea(el) {
-    try {
-      const page = el.closest(".page") || el.closest("body");
-      if (!page) return false;
-      return !!(page.querySelector("#mealList") || page.querySelector("#mealName"));
-    } catch (e) { return false; }
-  }
-
-  function findAddButtonInAddMealsArea() {
-    const candidates = Array.from(document.querySelectorAll("button, input[type=button], a"));
-    const addCandidates = candidates.filter(el => {
-      const t = (el.textContent || el.value || "").trim();
-      return /^(?:\+?\s*Add Meal|Add Meal|Add Meals|Add)$/i.test(t);
-    });
-    return addCandidates.find(b => isInsideAddMealsArea(b)) || null;
-  }
-
-  const btn = findAddButtonInAddMealsArea();
-  if (btn) insertBubble(btn);
-
-  const observer = new MutationObserver(muts => {
-    for (const m of muts) {
-      for (const node of m.addedNodes) {
-        if (node.nodeType !== 1) continue;
-        if (/button|a|input/i.test(node.tagName)) {
-          const t = (node.textContent || node.value || "").trim();
-          if (/^(?:\+?\s*Add Meal|Add Meal|Add Meals|Add)$/i.test(t) && isInsideAddMealsArea(node)) {
-            if (insertBubble(node)) return;
-          }
-        }
-        const descendants = node.querySelectorAll ? node.querySelectorAll("button, a, input[type=button]") : [];
-        for (const d of descendants) {
-          const t = (d.textContent || d.value || "").trim();
-          if (/^(?:\+?\s*Add Meal|Add Meal|Add Meals|Add)$/i.test(t) && isInsideAddMealsArea(d)) {
-            if (insertBubble(d)) return;
-          }
-        }
-      }
-    }
-  });
-
-  observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
-})();
-
-/* ===== Centered Add Meal + Go to Shopping List controls on Meal Planner (header at top) =====
-   Places the "Meal Planner" header at the very top of the planner container,
-   removes duplicate planner title instances, and centers the Add controls below it.
-*/
-(function ensureHeaderAtTopAndCenteredControls() {
-  const GO_CLASS = "go-to-shop-btn";
-  const WRAPPER_CLASS = "add-meal-controls-centered";
+/* ===== ensurePlannerHasGoButton (match Add button position & size) ===== */
+(function ensurePlannerHasGoButton() {
   const GO_LABEL = "Go to Shopping List";
-  const HEADER_TEXT = "Meal Planner";
-  const HEADER_CLASS = "planner-title-top";
+  const WRAPPER_CLASS = "add-meal-controls-centered";
 
   function createGoButton() {
     const btn = document.createElement("button");
-    btn.className = GO_CLASS + " tool-btn";
+    btn.className = "go-to-shop-btn tool-btn";
     btn.type = "button";
     btn.textContent = GO_LABEL;
-    btn.style.background = "var(--ocean, #006994)";
-    btn.style.color = "#fff";
-    btn.style.border = "1px solid rgba(0,0,0,0.06)";
-    btn.style.boxShadow = "0 6px 14px rgba(0,105,140,0.12)";
-    btn.style.padding = "12px 18px";
-    btn.style.borderRadius = "10px";
-    btn.style.fontSize = "15px";
-    btn.style.fontWeight = "700";
-    btn.style.cursor = "pointer";
-    btn.style.display = "inline-block";
-    btn.style.textAlign = "center";
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      try {
-        if (typeof nav === "function") nav("shop");
-        else {
-          const shopEl = document.getElementById("shop");
-          if (shopEl) {
-            document.querySelectorAll(".page").forEach(pg => pg.classList.remove("active"));
-            shopEl.classList.add("active");
-            if (typeof renderShoppingList === "function") renderShoppingList();
-          } else {
-            window.location.hash = "#shop";
-          }
-        }
-      } catch (err) {
-        console.error("Go to Shopping List navigation failed", err);
-      }
+      try { if (typeof nav === "function") nav("shop"); else window.location.hash = "#shop"; }
+      catch (err) { console.error("Go to Shopping List navigation failed", err); }
     });
     return btn;
   }
 
-  function styleAddButtonToAccent(addBtn) {
+  function styleAddButton(addBtn) {
     try {
       addBtn.style.background = "var(--accent, #0b76c2)";
       addBtn.style.color = "#fff";
@@ -730,92 +776,43 @@ function renameHomeAddButtonScoped() {
     } catch (e) {}
   }
 
-  function isInsideAddMealsArea(el) {
+  function copySizing(fromBtn, toBtn) {
+    if (!fromBtn || !toBtn) return;
+    const props = [
+      "padding", "padding-top", "padding-right", "padding-bottom", "padding-left",
+      "font-size", "font-weight", "border-radius", "width", "height",
+      "min-width", "min-height", "box-sizing", "line-height"
+    ];
     try {
-      const page = el.closest(".page") || el.closest("body");
-      if (!page) return false;
-      return !!(page.querySelector("#mealList") || page.querySelector("#mealName"));
-    } catch (e) { return false; }
+      const cs = window.getComputedStyle(fromBtn);
+      props.forEach(p => {
+        const v = cs.getPropertyValue(p);
+        if (v) toBtn.style.setProperty(p, v);
+      });
+      toBtn.style.display = cs.getPropertyValue("display") || "inline-block";
+      toBtn.style.boxSizing = cs.getPropertyValue("box-sizing") || "border-box";
+    } catch (e) {
+      styleAddButton(toBtn);
+    }
   }
 
   function findAddMealButton() {
-    const candidates = Array.from(document.querySelectorAll("button, input[type=button], a"));
-    const addCandidates = candidates.filter(el => {
+    const planner = document.getElementById("planner");
+    if (!planner) return null;
+    const candidates = Array.from(planner.querySelectorAll("button, .btn"));
+    return candidates.find(el => {
       const t = (el.textContent || el.value || "").trim();
-      return /^(?:\+?\s*Add Meal|Add Meal|Add Meals|Add)$/i.test(t);
-    });
-    return addCandidates.find(b => isInsideAddMealsArea(b)) || null;
+      return /^\+?\s*Add Meal$/i.test(t);
+    }) || null;
   }
 
-  function findPageLevelContainer(addBtn) {
-    const page = addBtn.closest(".page");
-    if (page) return page;
-    const main = addBtn.closest("main") || document.querySelector("main");
-    if (main) return main;
-    return document.body;
-  }
+  function insertControls(addBtn) {
+    if (!addBtn || !addBtn.closest) return false;
+    const planner = document.getElementById("planner") || addBtn.closest(".page") || document.body;
 
-  function removeExistingPlannerTitles(container) {
-    try {
-      // remove any elements that contain the exact header text inside the planner container
-      const candidates = Array.from(container.querySelectorAll("*")).filter(el => {
-        try { return (el.textContent || "").trim() === HEADER_TEXT; } catch { return false; }
-      });
-      for (const c of candidates) c.remove();
-    } catch (e) {}
-  }
-
-  function insertHeaderAtTop(container) {
-    // ensure single header at very top of container
-    removeExistingPlannerTitles(container);
-    let header = container.querySelector(`.${HEADER_CLASS}`);
-    if (!header) {
-      header = document.createElement("div");
-      header.className = HEADER_CLASS;
-      header.textContent = HEADER_TEXT;
-      header.style.width = "100%";
-      header.style.boxSizing = "border-box";
-      header.style.textAlign = "center";
-      header.style.fontSize = "18px";
-      header.style.fontWeight = "800";
-      header.style.color = "var(--text, #111)";
-      header.style.margin = "6px 0";
-      // insert at very top of container content
-      container.insertBefore(header, container.firstChild);
-    } else {
-      // ensure it's at the top
-      if (container.firstChild !== header) {
-        header.parentElement.removeChild(header);
-        container.insertBefore(header, container.firstChild);
-      }
-    }
-    return header;
-  }
-
-  function insertCenteredControls(addBtn) {
-    if (!addBtn || !addBtn.parentElement) return false;
-
-    // Reuse or create Go button
-    let goBtn = Array.from(document.querySelectorAll("button, input[type=button], a"))
-      .find(el => ((el.textContent || el.value || "").trim() === GO_LABEL) && isInsideAddMealsArea(el));
-    if (goBtn && !(goBtn instanceof HTMLButtonElement)) {
-      const newGo = createGoButton();
-      goBtn.parentElement.insertBefore(newGo, goBtn.nextSibling);
-      goBtn = newGo;
-    }
-    if (!goBtn) goBtn = createGoButton();
-
-    try {
-      const container = findPageLevelContainer(addBtn);
-
-      // Insert header at top of container
-      insertHeaderAtTop(container);
-
-      // Remove any stray planner header elements that might remain
-      removeExistingPlannerTitles(container);
-
-      // Create wrapper for the two buttons and insert below header
-      const wrapper = document.createElement("div");
+    let wrapper = planner.querySelector(`.${WRAPPER_CLASS}`);
+    if (!wrapper) {
+      wrapper = document.createElement("div");
       wrapper.className = WRAPPER_CLASS;
       wrapper.style.display = "flex";
       wrapper.style.justifyContent = "center";
@@ -824,88 +821,359 @@ function renameHomeAddButtonScoped() {
       wrapper.style.width = "100%";
       wrapper.style.boxSizing = "border-box";
       wrapper.style.margin = "12px 0";
-
-      // Insert wrapper after header
-      const headerNow = container.querySelector(`.${HEADER_CLASS}`);
-      if (headerNow && headerNow.nextSibling) container.insertBefore(wrapper, headerNow.nextSibling);
-      else container.insertBefore(wrapper, container.firstChild);
-
-      // Move addBtn and goBtn into wrapper (this removes them from previous parents)
-      wrapper.appendChild(addBtn);
-      wrapper.appendChild(goBtn);
-
-      // Style both buttons
-      styleAddButtonToAccent(addBtn);
-      goBtn.style.background = "var(--ocean, #006994)";
-      goBtn.style.color = "#fff";
-      goBtn.style.border = "1px solid rgba(0,0,0,0.06)";
-      goBtn.style.boxShadow = "0 6px 14px rgba(0,105,140,0.12)";
-      goBtn.style.padding = "12px 18px";
-      goBtn.style.borderRadius = "10px";
-      goBtn.style.fontSize = "15px";
-      goBtn.style.fontWeight = "700";
-      goBtn.style.cursor = "pointer";
-      goBtn.style.display = "inline-block";
-      goBtn.style.textAlign = "center";
-      goBtn.style.float = "none";
-      goBtn.style.margin = "0";
-
-      // Ensure helper bubble (if present) is after the wrapper
-      const bubble = document.querySelector(".add-meal-helper");
-      if (bubble) {
-        if (wrapper.nextSibling) wrapper.parentElement.insertBefore(bubble, wrapper.nextSibling);
-        else wrapper.parentElement.appendChild(bubble);
-      }
-    } catch (e) {
-      // fallback: insert goBtn after addBtn and style both
-      if (addBtn.nextSibling) addBtn.parentElement.insertBefore(goBtn, addBtn.nextSibling);
-      else addBtn.parentElement.appendChild(goBtn);
-      styleAddButtonToAccent(addBtn);
-      goBtn.style.background = "var(--ocean, #006994)";
     }
+
+    const inputsBlock = planner.querySelector(".inputs");
+    if (inputsBlock && inputsBlock.parentElement) {
+      if (inputsBlock.nextSibling !== wrapper) {
+        if (wrapper.parentElement) wrapper.parentElement.removeChild(wrapper);
+        if (inputsBlock.nextSibling) inputsBlock.parentElement.insertBefore(wrapper, inputsBlock.nextSibling);
+        else inputsBlock.parentElement.appendChild(wrapper);
+      }
+    } else {
+      if (!planner.firstChild || planner.firstChild === wrapper) planner.appendChild(wrapper);
+      else planner.insertBefore(wrapper, planner.firstChild);
+    }
+
+    if (addBtn.parentElement !== wrapper) wrapper.appendChild(addBtn);
+
+    let goBtn = wrapper.querySelector(".go-to-shop-btn");
+    if (!goBtn) {
+      goBtn = createGoButton();
+      wrapper.appendChild(goBtn);
+    }
+
+    styleAddButton(addBtn);
+    copySizing(addBtn, goBtn);
+
+    try {
+      const cs = window.getComputedStyle(addBtn);
+      goBtn.style.background = cs.getPropertyValue("background-color") || addBtn.style.background;
+      goBtn.style.color = cs.getPropertyValue("color") || addBtn.style.color;
+      goBtn.style.border = cs.getPropertyValue("border") || addBtn.style.border;
+      goBtn.style.boxShadow = cs.getPropertyValue("box-shadow") || addBtn.style.boxShadow;
+    } catch (e) {}
 
     return true;
   }
 
-  // Try immediate insertion
-  const addBtn = (function findAddMealButton() {
-    const candidates = Array.from(document.querySelectorAll("button, input[type=button], a"));
-    const addCandidates = candidates.filter(el => {
-      const t = (el.textContent || el.value || "").trim();
-      return /^(?:\+?\s*Add Meal|Add Meal|Add Meals|Add)$/i.test(t);
-    });
-    return addCandidates.find(b => {
-      try {
-        const page = b.closest(".page") || document.body;
-        return !!(page.querySelector("#mealList") || page.querySelector("#mealName"));
-      } catch { return false; }
-    }) || null;
-  })();
+  const addBtn = findAddMealButton();
+  if (addBtn) insertControls(addBtn);
 
-  if (addBtn) insertCenteredControls(addBtn);
-
-  // Observe DOM for dynamic insertion and insert only when the Add Meal button appears inside Add Meals area
-  const observer = new MutationObserver(muts => {
-    for (const m of muts) {
-      for (const node of m.addedNodes) {
-        if (node.nodeType !== 1) continue;
-        if (/button|a|input/i.test(node.tagName)) {
-          const t = (node.textContent || node.value || "").trim();
-          if (/^(?:\+?\s*Add Meal|Add Meal|Add Meals|Add)$/i.test(t) && isInsideAddMealsArea(node)) {
-            if (insertCenteredControls(node)) return;
-          }
-        }
-        const descendants = node.querySelectorAll ? node.querySelectorAll("button, a, input[type=button]") : [];
-        for (const d of descendants) {
-          const t = (d.textContent || d.value || "").trim();
-          if (/^(?:\+?\s*Add Meal|Add Meal|Add Meals|Add)$/i.test(t) && isInsideAddMealsArea(d)) {
-            if (insertCenteredControls(d)) return;
-          }
-        }
-      }
-    }
+  const observer = new MutationObserver(() => {
+    const add = findAddMealButton();
+    if (add) insertControls(add);
   });
+  observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
+})();
 
+/* ===== Insert Add & Select Meals button on Shopping List page, match Add & Select Essentials button exactly, place under Home button ===== */
+(function ensureShopHasAddSelectMealsButton() {
+  const SHOP_PAGE_ID = "shop";
+  const ESSENTIALS_SELECTOR = "#essentialSelectList, #essentialsList";
+  const BTN_CLASS = "add-select-meals-btn";
+
+  function createButton() {
+    const btn = document.createElement("button");
+    btn.className = BTN_CLASS + " tool-btn";
+    btn.type = "button";
+    btn.textContent = "Add & Select Meals";
+    // base styling (will be overridden by copySizing if reference found)
+    try {
+      btn.style.background = "var(--accent, #0b76c2)";
+      btn.style.color = "#fff";
+      btn.style.border = "1px solid rgba(0,0,0,0.06)";
+      btn.style.boxShadow = "0 6px 14px rgba(11,118,194,0.12)";
+      btn.style.padding = "10px 14px";
+      btn.style.borderRadius = "10px";
+      btn.style.fontSize = "15px";
+      btn.style.fontWeight = "700";
+      btn.style.cursor = "pointer";
+      btn.style.display = "block";
+      btn.style.width = "100%";
+      btn.style.boxSizing = "border-box";
+      btn.style.margin = "8px 0";
+    } catch (e) {}
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      try {
+        // PREFER the Add & Select Meals page (planner) — do not link to the legacy Select page
+        if (typeof nav === "function") {
+          if (document.getElementById("planner")) nav("planner");
+          else if (document.getElementById("select")) nav("select");
+          else nav("planner");
+        } else {
+          if (document.getElementById("planner")) window.location.hash = "#planner";
+          else if (document.getElementById("select")) window.location.hash = "#select";
+          else window.location.hash = "#planner";
+        }
+      } catch (err) {
+        console.error("Navigation to Add & Select Meals failed", err);
+      }
+    });
+
+    return btn;
+  }
+
+  function copySizingAndVisuals(fromBtn, toBtn) {
+    if (!fromBtn || !toBtn) return;
+    // properties to copy to ensure exact parity
+    const props = [
+      "display", "width", "min-width", "max-width", "height", "min-height", "max-height",
+      "padding", "padding-top", "padding-right", "padding-bottom", "padding-left",
+      "font-size", "font-weight", "border-radius", "box-sizing", "line-height",
+      "margin", "background-color", "color", "border", "box-shadow", "text-align"
+    ];
+    try {
+      const cs = window.getComputedStyle(fromBtn);
+      props.forEach(p => {
+        const v = cs.getPropertyValue(p);
+        if (v) toBtn.style.setProperty(p, v);
+      });
+      // ensure exact pixel width if computed
+      const computedWidth = cs.getPropertyValue("width");
+      if (computedWidth && computedWidth !== "auto") toBtn.style.width = computedWidth;
+      // ensure same display
+      const display = cs.getPropertyValue("display");
+      if (display) toBtn.style.display = display;
+      // ensure box-sizing parity
+      const box = cs.getPropertyValue("box-sizing");
+      if (box) toBtn.style.boxSizing = box;
+    } catch (e) {
+      // fallback minimal styling
+      try {
+        toBtn.style.padding = "10px 14px";
+        toBtn.style.fontSize = "15px";
+        toBtn.style.borderRadius = "10px";
+        toBtn.style.width = "100%";
+        toBtn.style.boxSizing = "border-box";
+      } catch (err) {}
+    }
+  }
+
+  function findEssentialsButton(shop) {
+    if (!shop) return null;
+    // 1) exact text match candidates
+    const textCandidates = Array.from(shop.querySelectorAll("button, .tool-btn, .btn")).filter(el => {
+      const t = (el.textContent || el.value || "").trim().toLowerCase();
+      return t === "add & select essentials" || t === "add & select items" || t === "add & select";
+    });
+    if (textCandidates.length) return textCandidates[0];
+
+    // 2) fuzzy text match
+    const fuzzy = Array.from(shop.querySelectorAll("button, .tool-btn, .btn")).find(el => {
+      const t = (el.textContent || el.value || "").trim().toLowerCase();
+      return /\b(add|select|essentials|items)\b/.test(t) && t.length < 40;
+    });
+    if (fuzzy) return fuzzy;
+
+    // 3) fallback: first visible prominent button near essentials area
+    const candidates = Array.from(shop.querySelectorAll("button, .tool-btn, .btn"));
+    const visible = candidates.find(el => {
+      const rect = el.getBoundingClientRect();
+      return rect.width > 40 && rect.height > 24;
+    });
+    return visible || null;
+  }
+
+  function findHomeButton(shop) {
+    if (!shop) return null;
+    const byClass = shop.querySelector(".home-btn, #homeBtn, #home");
+    if (byClass) return byClass;
+    const byText = Array.from(shop.querySelectorAll("button, a")).find(el => {
+      const t = (el.textContent || el.value || "").trim().toLowerCase();
+      return t === "home" || t === "home page" || t === "back home";
+    });
+    if (byText) return byText;
+    const candidates = Array.from(shop.querySelectorAll("button, a")).filter(el => {
+      const rect = el.getBoundingClientRect();
+      return rect.width > 20 && rect.height > 20;
+    });
+    return candidates.length ? candidates[0] : null;
+  }
+
+  function insertButton() {
+    const shop = document.getElementById(SHOP_PAGE_ID);
+    if (!shop) return false;
+
+    // avoid duplicate button
+    if (shop.querySelector(`.${BTN_CLASS}`)) return true;
+
+    const btn = createButton();
+
+    // find the Add & Select Essentials button to copy sizing from
+    const essentialsBtn = findEssentialsButton(shop);
+    if (essentialsBtn) {
+      copySizingAndVisuals(essentialsBtn, btn);
+    }
+
+    // find Home button and insert under it; otherwise insert above essentials or at top
+    const homeBtn = findHomeButton(shop);
+    if (homeBtn && homeBtn.parentElement) {
+      // insert after the home button
+      if (homeBtn.nextSibling) homeBtn.parentElement.insertBefore(btn, homeBtn.nextSibling);
+      else homeBtn.parentElement.appendChild(btn);
+      return true;
+    }
+
+    const target = shop.querySelector(ESSENTIALS_SELECTOR);
+    const container = target || shop.querySelector(".essentials-container") || shop;
+    container.insertBefore(btn, target || container.firstChild);
+    return true;
+  }
+
+  // initial attempt
+  insertButton();
+
+  // keep it present if the page updates dynamically
+  const observer = new MutationObserver(() => insertButton());
+  observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
+})();
+
+/* ===== Insert slim info box on Add & Select Meals page only (id "planner") ===== */
+(function ensureMealsInfoBoxOnPlannerOnly() {
+  const TARGET_ID = "planner";
+  const INFO_CLASS = "meals-info-box";
+  const INFO_TEXT = "Click on an item below to add or remove in the Shopping List.";
+
+  function createInfoBox() {
+    const box = document.createElement("div");
+    box.className = INFO_CLASS;
+    box.setAttribute("role", "status");
+    box.setAttribute("aria-live", "polite");
+    box.style.width = "100%";
+    box.style.boxSizing = "border-box";
+    box.style.background = "rgba(250,250,250,0.98)";
+    box.style.border = "1px solid rgba(0,0,0,0.06)";
+    box.style.boxShadow = "0 4px 10px rgba(0,0,0,0.04)";
+    box.style.padding = "8px 12px";
+    box.style.borderRadius = "10px";
+    box.style.margin = "10px 0";
+    box.style.textAlign = "center";
+    box.style.fontFamily = "Poppins, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial";
+    box.style.fontSize = "13px";
+    box.style.color = "#333";
+    box.textContent = INFO_TEXT;
+    return box;
+  }
+
+  function findButtonsBlock(pageEl) {
+    const candidates = Array.from(pageEl.querySelectorAll("div, section, header"));
+    for (const c of candidates) {
+      const btns = c.querySelectorAll("button, a, .tool-btn, .btn");
+      if (btns.length >= 2) return c;
+    }
+    return pageEl;
+  }
+
+  function insertInfo() {
+    const targetPage = document.getElementById(TARGET_ID);
+    if (!targetPage) return false;
+
+    if (targetPage.querySelector(`.${INFO_CLASS}`)) return true;
+
+    const buttonsBlock = findButtonsBlock(targetPage);
+    const info = createInfoBox();
+
+    if (buttonsBlock && buttonsBlock !== targetPage) {
+      if (buttonsBlock.nextSibling) buttonsBlock.parentElement.insertBefore(info, buttonsBlock.nextSibling);
+      else buttonsBlock.parentElement.appendChild(info);
+      return true;
+    }
+
+    const mealContainer = targetPage.querySelector("#mealList, #manualList, .meals-container");
+    if (mealContainer && mealContainer.parentElement) {
+      mealContainer.parentElement.insertBefore(info, mealContainer);
+      return true;
+    }
+
+    targetPage.insertBefore(info, targetPage.firstChild);
+    return true;
+  }
+
+  // initial attempt
+  insertInfo();
+
+  // keep it present if the page updates dynamically
+  const observer = new MutationObserver(() => insertInfo());
+  observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
+})();
+
+/* ===== Insert slim info box on Add & Select Essentials page (id "selectEssentials", fallback "essentials") ===== */
+(function ensureEssentialsInfoBox() {
+  const TARGET_IDS = ["selectEssentials", "essentials"];
+  const INFO_CLASS = "essentials-info-box";
+  const INFO_TEXT = "Click on an item below to add or remove in the Shopping List.";
+
+  function createInfoBox() {
+    const box = document.createElement("div");
+    box.className = INFO_CLASS;
+    box.setAttribute("role", "status");
+    box.setAttribute("aria-live", "polite");
+    box.style.width = "100%";
+    box.style.boxSizing = "border-box";
+    box.style.background = "rgba(250,250,250,0.98)";
+    box.style.border = "1px solid rgba(0,0,0,0.06)";
+    box.style.boxShadow = "0 4px 10px rgba(0,0,0,0.04)";
+    box.style.padding = "8px 12px";
+    box.style.borderRadius = "10px";
+    box.style.margin = "10px 0";
+    box.style.textAlign = "center";
+    box.style.fontFamily = "Poppins, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial";
+    box.style.fontSize = "13px";
+    box.style.color = "#333";
+    box.textContent = INFO_TEXT;
+    return box;
+  }
+
+  function findButtonsBlock(pageEl) {
+    const candidates = Array.from(pageEl.querySelectorAll("div, section, header"));
+    for (const c of candidates) {
+      const btns = c.querySelectorAll("button, a, .tool-btn, .btn");
+      if (btns.length >= 2) return c;
+    }
+    return pageEl;
+  }
+
+  function insertInfo() {
+    let targetPage = null;
+    for (const id of TARGET_IDS) {
+      const el = document.getElementById(id);
+      if (el) { targetPage = el; break; }
+    }
+    if (!targetPage) return false;
+
+    // avoid duplicate
+    if (targetPage.querySelector(`.${INFO_CLASS}`)) return true;
+
+    const buttonsBlock = findButtonsBlock(targetPage);
+    const info = createInfoBox();
+
+    // Insert after the buttons block if possible, otherwise before the essentials list
+    if (buttonsBlock && buttonsBlock !== targetPage) {
+      if (buttonsBlock.nextSibling) buttonsBlock.parentElement.insertBefore(info, buttonsBlock.nextSibling);
+      else buttonsBlock.parentElement.appendChild(info);
+      return true;
+    }
+
+    // fallback: insert above essentialSelectList or essentialsList if present
+    const essentialsContainer = targetPage.querySelector("#essentialSelectList, #essentialsList, .essentials-container");
+    if (essentialsContainer && essentialsContainer.parentElement) {
+      essentialsContainer.parentElement.insertBefore(info, essentialsContainer);
+      return true;
+    }
+
+    // final fallback: append to top of targetPage
+    targetPage.insertBefore(info, targetPage.firstChild);
+    return true;
+  }
+
+  // initial attempt
+  insertInfo();
+
+  // keep it present if the page updates dynamically
+  const observer = new MutationObserver(() => insertInfo());
   observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
 })();
 
@@ -914,11 +1182,9 @@ window.onload = () => {
   bindElements();
   renameHomeAddButtonScoped();
   renderMeals();
+  renderManualList();
   renderEssentials();
+  renderEssentialSelectList();
   renderShoppingList();
-
-  mirror([
-    "meals","plan","essentials","manualEssentials","manualSelected",
-    "clearedShopping","checkedShopping","planSnapshot"
-  ]);
+  mirror(["meals","plan","essentials","manualEssentials","manualSelected","clearedShopping","checkedShopping","planSnapshot"]);
 };
