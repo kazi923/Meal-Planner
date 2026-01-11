@@ -1,10 +1,8 @@
-/* ===== app.js — Full updated file
-   - Adds info box to Add & Select Essentials page (id "selectEssentials", fallback "essentials")
-   - Recipe items appear inside each meal card, left-aligned, single-line under the meal name (ellipsis if too long)
-   - Add & Select Meals button on Shopping List links to planner (Add & Select Meals page)
-   - Slim info box placed on Add & Select Meals page (id "planner")
-   - Button sizing/color parity and placement preserved
-   - Existing meal/essentials/shopping logic retained
+// app.js
+/* ===== app.js — Combined from backup parts =====
+   - Restored backup logic and UI
+   - Includes meals, essentials, shopping, UI helpers, and robust rename
+   - Paste this file over your existing app.js and reload the page
 */
 
 /* ===== Immediately remove any stray Select Meals UI and prevent reinsertion ===== */
@@ -13,7 +11,7 @@
     if(!el || el.nodeType !== 1) return false;
     try {
       if (el.id === "selectMealsBtn") { el.remove(); return true; }
-      if ((el.textContent || "").trim() === "Select Meals") { el.remove(); return true; }
+      if ((el.textContent || "").trim().toLowerCase() === "select meals") { el.remove(); return true; }
     } catch(e){}
     return false;
   }
@@ -209,25 +207,22 @@ function renderMeals() {
     card.className = "meal-card card";
     styleCardAsButton(card, "accent");
 
-    // selected visual state
     if (manualSelected.has(idx)) {
       card.style.filter = "brightness(0.88)";
       card.style.borderColor = "rgba(0,0,0,0.08)";
     }
 
-    // layout: left area (tick + content) and right controls
     card.style.display = "flex";
     card.style.alignItems = "center";
     card.style.justifyContent = "space-between";
     card.style.gap = "12px";
 
-    // left: tick + content (content stacks title and recipe)
     const left = document.createElement("div");
     left.style.display = "flex";
     left.style.alignItems = "flex-start";
     left.style.gap = "10px";
     left.style.flex = "1";
-    left.style.minWidth = "0"; // allow ellipsis
+    left.style.minWidth = "0";
 
     const checkBadge = document.createElement("div");
     checkBadge.className = "meal-check-badge";
@@ -248,12 +243,11 @@ function renderMeals() {
       checkBadge.textContent = "";
     }
 
-    // content container stacks title and recipe
     const content = document.createElement("div");
     content.style.display = "flex";
     content.style.flexDirection = "column";
     content.style.flex = "1";
-    content.style.minWidth = "0"; // allow child ellipsis
+    content.style.minWidth = "0";
 
     const title = document.createElement("div");
     title.textContent = m.name;
@@ -264,11 +258,10 @@ function renderMeals() {
     title.style.overflow = "hidden";
     title.style.textOverflow = "ellipsis";
 
-    // recipe line: hidden by default; when visible it sits under the title in one line with ellipsis
     const recipeDiv = document.createElement("div");
     recipeDiv.id = `r${x}`;
     recipeDiv.className = "recipe";
-    recipeDiv.style.display = "none"; // toggled by Show Recipe
+    recipeDiv.style.display = "none";
     recipeDiv.style.marginTop = "6px";
     recipeDiv.style.color = "rgba(255,255,255,0.92)";
     recipeDiv.style.fontSize = "13px";
@@ -285,7 +278,6 @@ function renderMeals() {
     left.appendChild(checkBadge);
     left.appendChild(content);
 
-    // right-side controls (Show Recipe toggles recipeDiv display)
     const controls = document.createElement("div");
     controls.className = "meal-controls";
     controls.style.display = "flex";
@@ -303,7 +295,6 @@ function renderMeals() {
     showBtn.style.borderRadius = "6px";
     showBtn.onclick = (e) => {
       e.stopPropagation();
-      // toggle recipe visibility inside the card (one-line)
       if (recipeDiv.style.display === "block") {
         recipeDiv.style.display = "none";
         showBtn.textContent = "Show Recipe";
@@ -335,15 +326,11 @@ function renderMeals() {
     controls.appendChild(editBtn);
     controls.appendChild(delBtn);
 
-    // clicking the card (outside controls) toggles selection for shopping list
     card.onclick = (e) => {
       if (e.target.closest && e.target.closest(".meal-controls")) return;
       if (manualSelected.has(idx)) manualSelected.delete(idx);
       else manualSelected.add(idx);
-
-      // ensure items reappear in shopping list if previously cleared
       m.items.split(",").forEach(it => clearedShopping.delete(norm(it)));
-
       saveManualSelected();
       saveShoppingState();
       renderMeals();
@@ -452,7 +439,6 @@ function renderEssentials() {
       essentials.splice(index, 1);
       setLS("essentials", essentials);
       mirror(["essentials"]);
-      // adjust manualEssentials indices
       const newManual = new Set();
       manualEssentials.forEach(i => {
         const iNum = Number(i);
@@ -490,7 +476,6 @@ function renderEssentialSelectList() {
     row.style.justifyContent = "space-between";
     row.style.padding = "10px 12px";
 
-    // left area: circular tick + label
     const left = document.createElement("div");
     left.style.display = "flex";
     left.style.alignItems = "center";
@@ -526,7 +511,6 @@ function renderEssentialSelectList() {
     left.appendChild(checkBadge);
     left.appendChild(label);
 
-    // right area: small tool buttons
     const controls = document.createElement("div");
     controls.style.display = "flex";
     controls.style.gap = "8px";
@@ -553,7 +537,6 @@ function renderEssentialSelectList() {
       essentials.splice(index, 1);
       setLS("essentials", essentials);
       mirror(["essentials"]);
-      // adjust manualEssentials indices
       const newManual = new Set();
       manualEssentials.forEach(i => {
         const iNum = Number(i);
@@ -570,15 +553,11 @@ function renderEssentialSelectList() {
     controls.appendChild(edit);
     controls.appendChild(del);
 
-    // clicking the row toggles selection
     row.onclick = (e) => {
       if (e.target.closest && e.target.closest("button")) return;
       if (manualEssentials.has(key)) manualEssentials.delete(key);
       else manualEssentials.add(key);
-
-      // ensure item reappears in shopping list if previously cleared
       clearedShopping.delete(norm(item));
-
       saveManualEssentials();
       saveShoppingState();
       renderEssentialSelectList();
@@ -687,7 +666,6 @@ function renderShoppingList() {
       e.stopPropagation();
       clearedShopping.add(key);
       saveShoppingState();
-      // remove matching manualEssentials entries
       manualEssentials.forEach(i => {
         const item = essentials[+i];
         if (!item) return;
@@ -731,18 +709,18 @@ function renameHomeAddButtonScoped() {
           }
         }
       } catch (e) { if (e === "inside") continue; }
-      if (el.tagName === "INPUT") el.value = newText;
-      else el.textContent = newText;
+      if (el.tagName === "INPUT") el.value = newText; else el.textContent = newText;
       break;
     }
   }
-  renameIfOutside("Add Meals", "Add & Select Meals", ["#mealList", "#mealName"]);
-  renameIfOutside("Add Essentials", "Add & Select Items", ["#essentialSelectList", "#essentialItem"]);
+  // rename Add Meals -> Main Meals; Add Essentials -> Essentials
+  renameIfOutside("Add Meals", "Main Meals", ["#mealList", "#mealName"]);
+  renameIfOutside("Add Essentials", "Essentials", ["#essentialSelectList", "#essentialItem"]);
 }
 
 /* ===== ensurePlannerHasGoButton (match Add button position & size) ===== */
 (function ensurePlannerHasGoButton() {
-  const GO_LABEL = "Go to Shopping List";
+  const GO_LABEL = "Shopping List";
   const WRAPPER_CLASS = "add-meal-controls-centered";
 
   function createGoButton() {
@@ -867,18 +845,17 @@ function renameHomeAddButtonScoped() {
   observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
 })();
 
-/* ===== Insert Add & Select Meals button on Shopping List page, match Add & Select Essentials button exactly, place under Home button ===== */
-(function ensureShopHasAddSelectMealsButton() {
+/* ===== Insert Main Meals button on Shopping List page, match Essentials button exactly, place under Home button ===== */
+(function ensureShopHasMainMealsButton() {
   const SHOP_PAGE_ID = "shop";
   const ESSENTIALS_SELECTOR = "#essentialSelectList, #essentialsList";
-  const BTN_CLASS = "add-select-meals-btn";
+  const BTN_CLASS = "main-meals-btn";
 
   function createButton() {
     const btn = document.createElement("button");
     btn.className = BTN_CLASS + " tool-btn";
     btn.type = "button";
-    btn.textContent = "Add & Select Meals";
-    // base styling (will be overridden by copySizing if reference found)
+    btn.textContent = "Main Meals";
     try {
       btn.style.background = "var(--accent, #0b76c2)";
       btn.style.color = "#fff";
@@ -898,7 +875,6 @@ function renameHomeAddButtonScoped() {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       try {
-        // PREFER the Add & Select Meals page (planner) — do not link to the legacy Select page
         if (typeof nav === "function") {
           if (document.getElementById("planner")) nav("planner");
           else if (document.getElementById("select")) nav("select");
@@ -909,7 +885,7 @@ function renameHomeAddButtonScoped() {
           else window.location.hash = "#planner";
         }
       } catch (err) {
-        console.error("Navigation to Add & Select Meals failed", err);
+        console.error("Navigation to Main Meals failed", err);
       }
     });
 
@@ -918,7 +894,6 @@ function renameHomeAddButtonScoped() {
 
   function copySizingAndVisuals(fromBtn, toBtn) {
     if (!fromBtn || !toBtn) return;
-    // properties to copy to ensure exact parity
     const props = [
       "display", "width", "min-width", "max-width", "height", "min-height", "max-height",
       "padding", "padding-top", "padding-right", "padding-bottom", "padding-left",
@@ -931,17 +906,13 @@ function renameHomeAddButtonScoped() {
         const v = cs.getPropertyValue(p);
         if (v) toBtn.style.setProperty(p, v);
       });
-      // ensure exact pixel width if computed
       const computedWidth = cs.getPropertyValue("width");
       if (computedWidth && computedWidth !== "auto") toBtn.style.width = computedWidth;
-      // ensure same display
       const display = cs.getPropertyValue("display");
       if (display) toBtn.style.display = display;
-      // ensure box-sizing parity
       const box = cs.getPropertyValue("box-sizing");
       if (box) toBtn.style.boxSizing = box;
     } catch (e) {
-      // fallback minimal styling
       try {
         toBtn.style.padding = "10px 14px";
         toBtn.style.fontSize = "15px";
@@ -954,22 +925,17 @@ function renameHomeAddButtonScoped() {
 
   function findEssentialsButton(shop) {
     if (!shop) return null;
-    // 1) exact text match candidates
-    const textCandidates = Array.from(shop.querySelectorAll("button, .tool-btn, .btn")).filter(el => {
-      const t = (el.textContent || el.value || "").trim().toLowerCase();
-      return t === "add & select essentials" || t === "add & select items" || t === "add & select";
-    });
-    if (textCandidates.length) return textCandidates[0];
-
-    // 2) fuzzy text match
-    const fuzzy = Array.from(shop.querySelectorAll("button, .tool-btn, .btn")).find(el => {
-      const t = (el.textContent || el.value || "").trim().toLowerCase();
+    // broadened matching: include many common variants and anchors
+    const candidates = Array.from(shop.querySelectorAll("button, .tool-btn, .btn, a"));
+    const normalized = (el) => ((el.textContent || el.value || "").trim().toLowerCase());
+    const exactMatches = ["essentials","add & select essentials","add & select items","add & select","add essentials","add & select items"];
+    const foundExact = candidates.find(el => exactMatches.includes(normalized(el)));
+    if (foundExact) return foundExact;
+    const fuzzy = candidates.find(el => {
+      const t = normalized(el);
       return /\b(add|select|essentials|items)\b/.test(t) && t.length < 40;
     });
     if (fuzzy) return fuzzy;
-
-    // 3) fallback: first visible prominent button near essentials area
-    const candidates = Array.from(shop.querySelectorAll("button, .tool-btn, .btn"));
     const visible = candidates.find(el => {
       const rect = el.getBoundingClientRect();
       return rect.width > 40 && rect.height > 24;
@@ -996,37 +962,23 @@ function renameHomeAddButtonScoped() {
   function insertButton() {
     const shop = document.getElementById(SHOP_PAGE_ID);
     if (!shop) return false;
-
-    // avoid duplicate button
     if (shop.querySelector(`.${BTN_CLASS}`)) return true;
-
     const btn = createButton();
-
-    // find the Add & Select Essentials button to copy sizing from
     const essentialsBtn = findEssentialsButton(shop);
-    if (essentialsBtn) {
-      copySizingAndVisuals(essentialsBtn, btn);
-    }
-
-    // find Home button and insert under it; otherwise insert above essentials or at top
+    if (essentialsBtn) copySizingAndVisuals(essentialsBtn, btn);
     const homeBtn = findHomeButton(shop);
     if (homeBtn && homeBtn.parentElement) {
-      // insert after the home button
       if (homeBtn.nextSibling) homeBtn.parentElement.insertBefore(btn, homeBtn.nextSibling);
       else homeBtn.parentElement.appendChild(btn);
       return true;
     }
-
     const target = shop.querySelector(ESSENTIALS_SELECTOR);
     const container = target || shop.querySelector(".essentials-container") || shop;
     container.insertBefore(btn, target || container.firstChild);
     return true;
   }
 
-  // initial attempt
   insertButton();
-
-  // keep it present if the page updates dynamically
   const observer = new MutationObserver(() => insertButton());
   observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
 })();
@@ -1070,32 +1022,24 @@ function renameHomeAddButtonScoped() {
   function insertInfo() {
     const targetPage = document.getElementById(TARGET_ID);
     if (!targetPage) return false;
-
     if (targetPage.querySelector(`.${INFO_CLASS}`)) return true;
-
     const buttonsBlock = findButtonsBlock(targetPage);
     const info = createInfoBox();
-
     if (buttonsBlock && buttonsBlock !== targetPage) {
       if (buttonsBlock.nextSibling) buttonsBlock.parentElement.insertBefore(info, buttonsBlock.nextSibling);
       else buttonsBlock.parentElement.appendChild(info);
       return true;
     }
-
     const mealContainer = targetPage.querySelector("#mealList, #manualList, .meals-container");
     if (mealContainer && mealContainer.parentElement) {
       mealContainer.parentElement.insertBefore(info, mealContainer);
       return true;
     }
-
     targetPage.insertBefore(info, targetPage.firstChild);
     return true;
   }
 
-  // initial attempt
   insertInfo();
-
-  // keep it present if the page updates dynamically
   const observer = new MutationObserver(() => insertInfo());
   observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
 })();
@@ -1143,48 +1087,64 @@ function renameHomeAddButtonScoped() {
       if (el) { targetPage = el; break; }
     }
     if (!targetPage) return false;
-
-    // avoid duplicate
     if (targetPage.querySelector(`.${INFO_CLASS}`)) return true;
-
     const buttonsBlock = findButtonsBlock(targetPage);
     const info = createInfoBox();
-
-    // Insert after the buttons block if possible, otherwise before the essentials list
     if (buttonsBlock && buttonsBlock !== targetPage) {
       if (buttonsBlock.nextSibling) buttonsBlock.parentElement.insertBefore(info, buttonsBlock.nextSibling);
       else buttonsBlock.parentElement.appendChild(info);
       return true;
     }
-
-    // fallback: insert above essentialSelectList or essentialsList if present
     const essentialsContainer = targetPage.querySelector("#essentialSelectList, #essentialsList, .essentials-container");
     if (essentialsContainer && essentialsContainer.parentElement) {
       essentialsContainer.parentElement.insertBefore(info, essentialsContainer);
       return true;
     }
-
-    // final fallback: append to top of targetPage
     targetPage.insertBefore(info, targetPage.firstChild);
     return true;
   }
 
-  // initial attempt
   insertInfo();
-
-  // keep it present if the page updates dynamically
   const observer = new MutationObserver(() => insertInfo());
   observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
 })();
 
+/* ===== Robust rename: force "Essentials" label after load and short fallback ===== */
+(function robustEssentialsRename() {
+  function replaceVisibleEssentials() {
+    Array.from(document.querySelectorAll("button, a, .tool-btn, .btn")).forEach(el => {
+      const t = (el.textContent || el.value || "").trim().toLowerCase();
+      if (["add & select essentials","add & select items","add & select","add essentials","add & select items"].includes(t)) {
+        el.textContent = "Essentials";
+      }
+    });
+  }
+
+  // run once after load
+  window.addEventListener("load", () => {
+    try { renameHomeAddButtonScoped(); } catch(e){}
+    replaceVisibleEssentials();
+  });
+
+  // short fallback: run a few times to catch scripts that overwrite labels later
+  let attempts = 0;
+  const maxAttempts = 6;
+  const interval = setInterval(() => {
+    replaceVisibleEssentials();
+    attempts++;
+    if (attempts >= maxAttempts) clearInterval(interval);
+  }, 500);
+})();
+
 /* ===== Init on load ===== */
-window.onload = () => {
+window.addEventListener("load", () => {
   bindElements();
-  renameHomeAddButtonScoped();
+  // ensure rename runs (also covered by robustEssentialsRename)
+  try { renameHomeAddButtonScoped(); } catch(e){}
   renderMeals();
   renderManualList();
   renderEssentials();
   renderEssentialSelectList();
   renderShoppingList();
   mirror(["meals","plan","essentials","manualEssentials","manualSelected","clearedShopping","checkedShopping","planSnapshot"]);
-};
+});
