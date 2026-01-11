@@ -47,6 +47,11 @@ h2{
   color:#fff;
 }
 
+/* Make the "+ Add Meal" button on the Meal Planner page slightly narrower */
+#planner .button-row .btn[onclick^="addMeal"] {
+  max-width:220px;
+}
+
 /* Ocean theme */
 .theme-ocean{
   background:var(--ocean) !important;
@@ -127,4 +132,43 @@ h2{
   padding:6px 10px;
   border-radius:6px;
   cursor:pointer;
+}
+
+/* Mobile overlap fixes (kept from previous patch) */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+.card,
+.meal-card,
+.shopping-item,
+.recipe,
+.meals-info-box,
+.essentials-info-box {
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+
+.meal-card,
+.meal-card > div,
+.meal-card .recipe,
+.card > div,
+.shopping-item span,
+.essential-check-badge,
+.meal-check-badge {
+  min-width: 0;
+}
+
+.meal-card .recipe,
+.meal-card > div > div:first-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 420px) {
+  .meal-card .recipe { font-size: 12px; }
+  .btn, .tool-btn { padding: 8px 10px; font-size: 14px; }
 }
