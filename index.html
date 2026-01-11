@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>Meal Planner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- HOME PAGE -->
+<div id="home" class="page active">
+  <h2>Meal Planner</h2>
+
+  <button class="btn theme-ocean" onclick="nav('planner')">Add Meals</button>
+  <button class="btn theme-ocean" onclick="nav('select')">Select Meals</button>
+  <button class="btn theme-ocean" onclick="nav('selectEssentials')">Add & Select Essentials</button>
+  <button class="btn theme-ocean" onclick="nav('shop')">Shopping List</button>
+</div>
+
+<!-- MEAL PLANNER PAGE -->
+<div id="planner" class="page">
+  <h2>Meal Planner</h2>
+  <button class="btn theme-ocean" onclick="nav('home')">Home</button>
+
+  <div class="inputs">
+    <input id="mealName" placeholder="Meal name"/>
+    <input id="mealItems" placeholder="Recipe items (comma separated)"/>
+  </div>
+
+  <div class="button-row">
+    <button class="btn theme-ocean" onclick="addMeal()">+ Add Meal</button>
+    <button class="btn theme-ocean" onclick="nav('select')">Select Meals</button>
+  </div>
+
+  <div id="mealList"></div>
+</div>
+
+<!-- SELECT MEALS PAGE -->
+<div id="select" class="page">
+  <h2>Select Meals</h2>
+  <button class="btn theme-ocean" onclick="nav('home')">Home</button>
+
+  <div style="text-align:center;margin:10px 0;">
+    <button class="btn theme-ocean" onclick="nav('shop')">Go to Shopping List</button>
+  </div>
+
+  <div id="manualList"></div>
+</div>
+
+<!-- ADD & SELECT ESSENTIALS PAGE (restored) -->
+<div id="selectEssentials" class="page">
+  <h2>Add & Select Essentials</h2>
+  <button class="btn theme-ocean" onclick="nav('home')">Home</button>
+
+  <!-- Add essentials input -->
+  <div class="inputs" style="margin-top:12px;">
+    <input id="essentialItem" placeholder="Item (e.g. Milk, Bread, Coffee)"/>
+  </div>
+
+  <!-- Buttons: add and go to shopping list -->
+  <div class="button-row" style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
+    <button class="btn theme-ocean" onclick="addEssential()">+ Add Essential</button>
+    <button class="btn theme-ocean" onclick="nav('shop')">Go to Shopping List</button>
+  </div>
+
+  <!-- Select essentials list (click to toggle selection) -->
+  <div id="essentialSelectList" style="margin-top:14px;"></div>
+</div>
+
+<!-- SHOPPING LIST PAGE -->
+<div id="shop" class="page">
+  <h2>Shopping List</h2>
+
+  <div>
+    <button class="btn theme-ocean" onclick="nav('home')">Home</button>
+    <button class="btn theme-ocean" onclick="nav('select')">Select Meals</button>
+    <button class="btn theme-ocean" onclick="nav('selectEssentials')">Add & Select Essentials</button>
+  </div>
+
+  <div style="text-align:center;margin-bottom:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+    <button class="btn theme-ocean" onclick="clearAllShopping()">Clear All</button>
+  </div>
+
+  <div id="shoppingItems" class="shopping-list"></div>
+</div>
+
+<script src="storage.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
