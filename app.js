@@ -1,38 +1,9 @@
-// app.js
-/* ===== app.js — Combined from backup parts =====
-   - Restored backup logic and UI
-   - Includes meals, essentials, shopping, UI helpers, and robust rename
-   - Paste this file over your existing app.js and reload the page
+/* ===== app.js — Adjusted to remove Select page references =====
+   - Removed renderManualList and any nav('select') usage
+   - Preserves all other behavior (meals, essentials, shopping, storage mirror)
 */
 
-/* ===== Immediately remove any stray Select Meals UI and prevent reinsertion ===== */
-(function removeSelectMealsForever(){
-  function matchesAndRemove(el){
-    if(!el || el.nodeType !== 1) return false;
-    try {
-      if (el.id === "selectMealsBtn") { el.remove(); return true; }
-      if ((el.textContent || "").trim().toLowerCase() === "select meals") { el.remove(); return true; }
-    } catch(e){}
-    return false;
-  }
-
-  Array.from(document.querySelectorAll("button, a, input[type=button]")).forEach(el => matchesAndRemove(el));
-
-  const obs = new MutationObserver(muts => {
-    for (const m of muts) {
-      for (const node of m.addedNodes) {
-        if (matchesAndRemove(node)) return;
-        if (node.querySelectorAll) {
-          const descendants = node.querySelectorAll("button, a, input[type=button]");
-          for (const d of descendants) if (matchesAndRemove(d)) return;
-        }
-      }
-    }
-  });
-  obs.observe(document.documentElement || document.body, { childList: true, subtree: true });
-})();
-
-/* ===== Default data ===== */
+/* ===== Defaults and storage helpers ===== */
 const defaultMeals = [
   { name: "Spaghetti Bolognese", items: "Pasta, Minced Beef, Tomato Sauce, Garlic, Onion" },
   { name: "Grilled Salmon", items: "Salmon Fillet, Lemon, Olive Oil, Herbs" },
@@ -47,7 +18,6 @@ const defaultEssentials = [
   "Toothpaste","Shampoo","Soap","Cheese","Ham","Bananas","Orange Juice"
 ];
 
-/* ===== LocalStorage helpers ===== */
 const setLS = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 const getLS = (k, fallback) => {
   try {
@@ -56,31 +26,20 @@ const getLS = (k, fallback) => {
   } catch { return fallback; }
 };
 
-/* ===== Mirror helper (stub for external sync) ===== */
 function mirror(keys) {
   if (typeof syncStorageToIndexedDB === "function") syncStorageToIndexedDB(keys);
 }
 
-/* ===== State (load from storage) ===== */
+/* ===== App state ===== */
 let meals = getLS("meals", null);
-if (!Array.isArray(meals) || meals.length === 0) {
-  meals = defaultMeals.slice();
-  setLS("meals", meals);
-}
+if (!Array.isArray(meals) || meals.length === 0) { meals = defaultMeals.slice(); setLS("meals", meals); }
 
 let plan = getLS("plan", null);
-if (!Array.isArray(plan) || plan.length !== 7) {
-  plan = Array(7).fill(null);
-  setLS("plan", plan);
-}
+if (!Array.isArray(plan) || plan.length !== 7) { plan = Array(7).fill(null); setLS("plan", plan); }
 
 let essentials = getLS("essentials", null);
-if (!Array.isArray(essentials) || essentials.length === 0) {
-  essentials = defaultEssentials.slice();
-  setLS("essentials", essentials);
-}
+if (!Array.isArray(essentials) || essentials.length === 0) { essentials = defaultEssentials.slice(); setLS("essentials", essentials); }
 
-/* manual selections and shopping state */
 let manualSelected = new Set(getLS("manualSelected", []));
 let manualEssentials = new Set(getLS("manualEssentials", []));
 let clearedShopping = new Set(getLS("clearedShopping", []));
@@ -98,30 +57,17 @@ function bindElements() {
   essentialSelectList = document.getElementById("essentialSelectList");
   shoppingItems = document.getElementById("shoppingItems");
 
-  const required = ["mealList","mealName","mealItems","shoppingItems"];
-  required.forEach(id => {
+  ["mealList","mealName","mealItems","shoppingItems"].forEach(id => {
     if (!document.getElementById(id)) console.warn(`Missing DOM element id="${id}"`);
   });
 }
 
-/* ===== Helpers ===== */
-const saveManualSelected = () => {
-  setLS("manualSelected", [...manualSelected]);
-  mirror(["manualSelected"]);
-};
-
-const saveManualEssentials = () => {
-  setLS("manualEssentials", [...manualEssentials]);
-  mirror(["manualEssentials"]);
-};
-
-const saveShoppingState = () => {
-  setLS("clearedShopping", [...clearedShopping]);
-  setLS("checkedShopping", [...checkedShopping]);
-  mirror(["clearedShopping","checkedShopping"]);
-};
-
+/* ===== Small helpers ===== */
 const computePlanSnapshot = () => JSON.stringify(plan.map(p => (p ? p.name + "||" + p.items : null)));
+
+const saveManualSelected = () => { setLS("manualSelected", [...manualSelected]); mirror(["manualSelected"]); };
+const saveManualEssentials = () => { setLS("manualEssentials", [...manualEssentials]); mirror(["manualEssentials"]); };
+const saveShoppingState = () => { setLS("clearedShopping", [...clearedShopping]); setLS("checkedShopping", [...checkedShopping]); mirror(["clearedShopping","checkedShopping"]); };
 
 function saveAll() {
   setLS("meals", meals);
@@ -144,46 +90,70 @@ function saveAll() {
   if (shopEl && shopEl.classList.contains("active")) renderShoppingList();
 }
 
-/* ===== Navigation ===== */
-function nav(p) {
-  document.querySelectorAll(".page").forEach(pg => pg.classList.remove("active"));
-  const el = document.getElementById(p);
-  if (!el) return;
-  el.classList.add("active");
-
-  if (p === "planner") renderMeals();
-  if (p === "select") renderManualList();
-  if (p === "selectEssentials") renderEssentialSelectList();
-  if (p === "essentials") renderEssentials();
-  if (p === "shop") renderShoppingList();
-}
-
-/* ===== Visual helpers: card styling & normalization ===== */
 function norm(s) {
   return s ? s.toLowerCase().trim().replace(/[^\w\s]/g, "").replace(/s$/, "") : "";
 }
 
-function styleCardAsButton(cardEl, variant = "accent") {
+/* ===== Shared UI helpers (consolidated) ===== */
+function createInfoBox(text) {
+  const box = document.createElement("div");
+  box.className = "slim-info-box";
+  box.setAttribute("role", "status");
+  box.setAttribute("aria-live", "polite");
+  box.style.width = "100%";
+  box.style.boxSizing = "border-box";
+  box.style.background = "rgba(250,250,250,0.98)";
+  box.style.border = "1px solid rgba(0,0,0,0.06)";
+  box.style.boxShadow = "0 4px 10px rgba(0,0,0,0.04)";
+  box.style.padding = "8px 12px";
+  box.style.borderRadius = "10px";
+  box.style.margin = "10px 0";
+  box.style.textAlign = "center";
+  box.style.fontFamily = "Poppins, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial";
+  box.style.fontSize = "13px";
+  box.style.color = "#333";
+  box.textContent = text || "Click on an item below to add or remove in the Shopping List.";
+  return box;
+}
+
+function styleButton(btn, variant = "accent") {
   try {
-    const root = getComputedStyle(document.documentElement);
-    const accent = root.getPropertyValue("--accent").trim() || "#0b76c2";
-    const ocean = root.getPropertyValue("--ocean").trim() || "#006994";
-    const bg = variant === "ocean" ? ocean : accent;
-    cardEl.style.background = bg;
-    cardEl.style.color = "#fff";
-    cardEl.style.border = "1px solid rgba(0,0,0,0.06)";
-    cardEl.style.boxShadow = "0 6px 14px rgba(0,0,0,0.06)";
-    cardEl.style.padding = "12px";
-    cardEl.style.borderRadius = "10px";
+    btn.style.background = "var(--accent, #0b76c2)";
+    btn.style.color = "#fff";
+    btn.style.border = "1px solid rgba(0,0,0,0.06)";
+    btn.style.boxShadow = "0 6px 14px rgba(11,118,194,0.12)";
+    btn.style.padding = "12px 18px";
+    btn.style.borderRadius = "10px";
+    btn.style.fontSize = "15px";
+    btn.style.fontWeight = "700";
+    btn.style.cursor = "pointer";
+    btn.style.display = "inline-block";
+    btn.style.textAlign = "center";
+    btn.style.margin = "0";
+  } catch (e) {}
+}
+
+function copySizing(fromBtn, toBtn) {
+  if (!fromBtn || !toBtn) return;
+  const props = [
+    "padding", "padding-top", "padding-right", "padding-bottom", "padding-left",
+    "font-size", "font-weight", "border-radius", "width", "height",
+    "min-width", "min-height", "box-sizing", "line-height"
+  ];
+  try {
+    const cs = window.getComputedStyle(fromBtn);
+    props.forEach(p => {
+      const v = cs.getPropertyValue(p);
+      if (v) toBtn.style.setProperty(p, v);
+    });
+    toBtn.style.display = cs.getPropertyValue("display") || "inline-block";
+    toBtn.style.boxSizing = cs.getPropertyValue("box-sizing") || "border-box";
   } catch (e) {
-    cardEl.style.background = variant === "ocean" ? "#006994" : "#0b76c2";
-    cardEl.style.color = "#fff";
-    cardEl.style.borderRadius = "10px";
-    cardEl.style.padding = "12px";
+    styleButton(toBtn);
   }
 }
 
-/* ===== Meals: add / render / edit / delete ===== */
+/* ===== Meals logic ===== */
 function addMeal() {
   const n = (mealName && mealName.value || "").trim();
   const i = (mealItems && mealItems.value || "").trim();
@@ -196,26 +166,49 @@ function addMeal() {
   if (mealItems) mealItems.value = "";
 }
 
-/* Render meals: recipe items appear inside the card under the meal name in one line (ellipsis) */
+function editMeal(i) {
+  const m = meals[i];
+  if (!m) return;
+  const n = prompt("Edit meal name:", m.name);
+  if (n === null) return;
+  const it = prompt("Edit recipe items:", m.items);
+  if (it === null) return;
+  meals[i] = { name: n.trim(), items: it.trim() };
+  saveAll();
+  renderMeals();
+  renderShoppingList();
+}
+
+function deleteMeal(i) {
+  const m = meals[i];
+  if (!m) return;
+  if (!confirm(`Delete "${m.name}"?`)) return;
+  meals.splice(i, 1);
+  saveAll();
+  renderMeals();
+  renderShoppingList();
+}
+
 function renderMeals() {
   if (!mealList) return;
   mealList.innerHTML = "";
-
   meals.forEach((m, x) => {
     const idx = String(x);
     const card = document.createElement("div");
     card.className = "meal-card card";
-    styleCardAsButton(card, "accent");
+    card.style.display = "flex";
+    card.style.alignItems = "center";
+    card.style.justifyContent = "space-between";
+    card.style.gap = "12px";
+    card.style.padding = "12px";
+    card.style.borderRadius = "10px";
+    card.style.background = "var(--accent, #0b76c2)";
+    card.style.color = "#fff";
 
     if (manualSelected.has(idx)) {
       card.style.filter = "brightness(0.88)";
       card.style.borderColor = "rgba(0,0,0,0.08)";
     }
-
-    card.style.display = "flex";
-    card.style.alignItems = "center";
-    card.style.justifyContent = "space-between";
-    card.style.gap = "12px";
 
     const left = document.createElement("div");
     left.style.display = "flex";
@@ -343,36 +336,7 @@ function renderMeals() {
   });
 }
 
-function toggleRecipe(id) {
-  const e = document.getElementById(id);
-  if (!e) return;
-  e.style.display = e.style.display === "block" ? "none" : "block";
-}
-
-function editMeal(i) {
-  const m = meals[i];
-  if (!m) return;
-  const n = prompt("Edit meal name:", m.name);
-  if (n === null) return;
-  const it = prompt("Edit recipe items:", m.items);
-  if (it === null) return;
-  meals[i] = { name: n.trim(), items: it.trim() };
-  saveAll();
-  renderMeals();
-  renderShoppingList();
-}
-
-function deleteMeal(i) {
-  const m = meals[i];
-  if (!m) return;
-  if (!confirm(`Delete "${m.name}"?`)) return;
-  meals.splice(i, 1);
-  saveAll();
-  renderMeals();
-  renderShoppingList();
-}
-
-/* ===== Essentials: add / render / edit / delete / select ===== */
+/* ===== Essentials logic ===== */
 function addEssential() {
   const val = (essentialItem && essentialItem.value || "").trim();
   if (!val) return alert("Enter an item");
@@ -406,11 +370,14 @@ function renderEssentials() {
   essentials.forEach((item, index) => {
     const row = document.createElement("div");
     row.className = "card";
-    styleCardAsButton(row, "accent");
     row.style.display = "flex";
     row.style.justifyContent = "space-between";
     row.style.alignItems = "center";
     row.style.marginBottom = "8px";
+    row.style.padding = "10px";
+    row.style.borderRadius = "10px";
+    row.style.background = "var(--accent, #0b76c2)";
+    row.style.color = "#fff";
 
     const label = document.createElement("div");
     label.textContent = item;
@@ -461,7 +428,6 @@ function renderEssentials() {
   });
 }
 
-/* ===== Updated: renderEssentialSelectList uses circular tick like meals ===== */
 function renderEssentialSelectList() {
   if (!essentialSelectList) return;
   essentialSelectList.innerHTML = "";
@@ -469,12 +435,14 @@ function renderEssentialSelectList() {
     const key = String(index);
     const row = document.createElement("div");
     row.className = "card";
-    styleCardAsButton(row, "ocean");
     row.style.marginBottom = "8px";
     row.style.display = "flex";
     row.style.alignItems = "center";
     row.style.justifyContent = "space-between";
     row.style.padding = "10px 12px";
+    row.style.borderRadius = "10px";
+    row.style.background = "var(--ocean, #006994)";
+    row.style.color = "#fff";
 
     const left = document.createElement("div");
     left.style.display = "flex";
@@ -569,27 +537,6 @@ function renderEssentialSelectList() {
     row.appendChild(left);
     row.appendChild(controls);
     essentialSelectList.appendChild(row);
-  });
-}
-
-/* ===== Manual meals list (Select Meals page) ===== */
-function renderManualList() {
-  const box = document.getElementById("manualList");
-  if (!box) return;
-  box.innerHTML = "";
-  meals.forEach((m, i) => {
-    const btn = document.createElement("button");
-    btn.className = "meal-btn";
-    btn.textContent = m.name;
-    if (manualSelected.has(String(i))) btn.classList.add("selected");
-    btn.onclick = () => {
-      if (manualSelected.has(String(i))) manualSelected.delete(String(i));
-      else manualSelected.add(String(i));
-      saveManualSelected();
-      renderManualList();
-      renderShoppingList();
-    };
-    box.appendChild(btn);
   });
 }
 
@@ -694,457 +641,82 @@ function clearAllShopping() {
   renderShoppingList();
 }
 
-/* ===== Home button rename (scoped) ===== */
-function renameHomeAddButtonScoped() {
-  const candidates = Array.from(document.querySelectorAll("button, a, input[type=button]"));
-  function renameIfOutside(originalText, newText, anchorSelectors) {
-    for (const el of candidates) {
-      const txt = (el.textContent || el.value || "").trim();
-      if (txt !== originalText) continue;
-      try {
-        const page = el.closest(".page") || el.closest("body");
-        if (page) {
-          for (const sel of anchorSelectors) {
-            if (page.querySelector(sel)) throw "inside";
-          }
-        }
-      } catch (e) { if (e === "inside") continue; }
-      if (el.tagName === "INPUT") el.value = newText; else el.textContent = newText;
-      break;
-    }
-  }
-  // rename Add Meals -> Main Meals; Add Essentials -> Essentials
-  renameIfOutside("Add Meals", "Main Meals", ["#mealList", "#mealName"]);
-  renameIfOutside("Add Essentials", "Essentials", ["#essentialSelectList", "#essentialItem"]);
+/* ===== Navigation ===== */
+function nav(p) {
+  document.querySelectorAll(".page").forEach(pg => pg.classList.remove("active"));
+  const el = document.getElementById(p);
+  if (!el) return;
+  el.classList.add("active");
+
+  if (p === "planner") renderMeals();
+  // removed: if (p === "select") renderManualList();
+  if (p === "selectEssentials") renderEssentialSelectList();
+  if (p === "essentials") renderEssentials();
+  if (p === "shop") renderShoppingList();
 }
 
-/* ===== ensurePlannerHasGoButton (match Add button position & size) ===== */
-(function ensurePlannerHasGoButton() {
-  const GO_LABEL = "Shopping List";
-  const WRAPPER_CLASS = "add-meal-controls-centered";
-
-  function createGoButton() {
-    const btn = document.createElement("button");
-    btn.className = "go-to-shop-btn tool-btn";
-    btn.type = "button";
-    btn.textContent = GO_LABEL;
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      try { if (typeof nav === "function") nav("shop"); else window.location.hash = "#shop"; }
-      catch (err) { console.error("Go to Shopping List navigation failed", err); }
-    });
-    return btn;
-  }
-
-  function styleAddButton(addBtn) {
-    try {
-      addBtn.style.background = "var(--accent, #0b76c2)";
-      addBtn.style.color = "#fff";
-      addBtn.style.border = "1px solid rgba(0,0,0,0.06)";
-      addBtn.style.boxShadow = "0 6px 14px rgba(11,118,194,0.12)";
-      addBtn.style.padding = "12px 18px";
-      addBtn.style.borderRadius = "10px";
-      addBtn.style.fontSize = "15px";
-      addBtn.style.fontWeight = "700";
-      addBtn.style.cursor = "pointer";
-      addBtn.style.display = "inline-block";
-      addBtn.style.textAlign = "center";
-      addBtn.style.float = "none";
-      addBtn.style.margin = "0";
-    } catch (e) {}
-  }
-
-  function copySizing(fromBtn, toBtn) {
-    if (!fromBtn || !toBtn) return;
-    const props = [
-      "padding", "padding-top", "padding-right", "padding-bottom", "padding-left",
-      "font-size", "font-weight", "border-radius", "width", "height",
-      "min-width", "min-height", "box-sizing", "line-height"
-    ];
-    try {
-      const cs = window.getComputedStyle(fromBtn);
-      props.forEach(p => {
-        const v = cs.getPropertyValue(p);
-        if (v) toBtn.style.setProperty(p, v);
-      });
-      toBtn.style.display = cs.getPropertyValue("display") || "inline-block";
-      toBtn.style.boxSizing = cs.getPropertyValue("box-sizing") || "border-box";
-    } catch (e) {
-      styleAddButton(toBtn);
+/* ===== Label normalization (merged) ===== */
+function normalizeLabels() {
+  Array.from(document.querySelectorAll("button, a, .tool-btn, .btn, input[type=button]")).forEach(el => {
+    const t = (el.textContent || el.value || "").trim().toLowerCase();
+    if (["add & select essentials","add & select items","add & select","add essentials","add & select items"].includes(t)) {
+      if (el.tagName === "INPUT") el.value = "Essentials"; else el.textContent = "Essentials";
     }
-  }
-
-  function findAddMealButton() {
-    const planner = document.getElementById("planner");
-    if (!planner) return null;
-    const candidates = Array.from(planner.querySelectorAll("button, .btn"));
-    return candidates.find(el => {
-      const t = (el.textContent || el.value || "").trim();
-      return /^\+?\s*Add Meal$/i.test(t);
-    }) || null;
-  }
-
-  function insertControls(addBtn) {
-    if (!addBtn || !addBtn.closest) return false;
-    const planner = document.getElementById("planner") || addBtn.closest(".page") || document.body;
-
-    let wrapper = planner.querySelector(`.${WRAPPER_CLASS}`);
-    if (!wrapper) {
-      wrapper = document.createElement("div");
-      wrapper.className = WRAPPER_CLASS;
-      wrapper.style.display = "flex";
-      wrapper.style.justifyContent = "center";
-      wrapper.style.alignItems = "center";
-      wrapper.style.gap = "12px";
-      wrapper.style.width = "100%";
-      wrapper.style.boxSizing = "border-box";
-      wrapper.style.margin = "12px 0";
+    if (t === "add meals") {
+      if (el.tagName === "INPUT") el.value = "Main Meals"; else el.textContent = "Main Meals";
     }
-
-    const inputsBlock = planner.querySelector(".inputs");
-    if (inputsBlock && inputsBlock.parentElement) {
-      if (inputsBlock.nextSibling !== wrapper) {
-        if (wrapper.parentElement) wrapper.parentElement.removeChild(wrapper);
-        if (inputsBlock.nextSibling) inputsBlock.parentElement.insertBefore(wrapper, inputsBlock.nextSibling);
-        else inputsBlock.parentElement.appendChild(wrapper);
-      }
-    } else {
-      if (!planner.firstChild || planner.firstChild === wrapper) planner.appendChild(wrapper);
-      else planner.insertBefore(wrapper, planner.firstChild);
-    }
-
-    if (addBtn.parentElement !== wrapper) wrapper.appendChild(addBtn);
-
-    let goBtn = wrapper.querySelector(".go-to-shop-btn");
-    if (!goBtn) {
-      goBtn = createGoButton();
-      wrapper.appendChild(goBtn);
-    }
-
-    styleAddButton(addBtn);
-    copySizing(addBtn, goBtn);
-
-    try {
-      const cs = window.getComputedStyle(addBtn);
-      goBtn.style.background = cs.getPropertyValue("background-color") || addBtn.style.background;
-      goBtn.style.color = cs.getPropertyValue("color") || addBtn.style.color;
-      goBtn.style.border = cs.getPropertyValue("border") || addBtn.style.border;
-      goBtn.style.boxShadow = cs.getPropertyValue("box-shadow") || addBtn.style.boxShadow;
-    } catch (e) {}
-
-    return true;
-  }
-
-  const addBtn = findAddMealButton();
-  if (addBtn) insertControls(addBtn);
-
-  const observer = new MutationObserver(() => {
-    const add = findAddMealButton();
-    if (add) insertControls(add);
   });
-  observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
-})();
+}
 
-/* ===== Insert Main Meals button on Shopping List page, match Essentials button exactly, place under Home button ===== */
-(function ensureShopHasMainMealsButton() {
-  const SHOP_PAGE_ID = "shop";
-  const ESSENTIALS_SELECTOR = "#essentialSelectList, #essentialsList";
-  const BTN_CLASS = "main-meals-btn";
-
-  function createButton() {
-    const btn = document.createElement("button");
-    btn.className = BTN_CLASS + " tool-btn";
-    btn.type = "button";
-    btn.textContent = "Main Meals";
-    try {
-      btn.style.background = "var(--accent, #0b76c2)";
-      btn.style.color = "#fff";
-      btn.style.border = "1px solid rgba(0,0,0,0.06)";
-      btn.style.boxShadow = "0 6px 14px rgba(11,118,194,0.12)";
-      btn.style.padding = "10px 14px";
-      btn.style.borderRadius = "10px";
-      btn.style.fontSize = "15px";
-      btn.style.fontWeight = "700";
-      btn.style.cursor = "pointer";
-      btn.style.display = "block";
-      btn.style.width = "100%";
-      btn.style.boxSizing = "border-box";
-      btn.style.margin = "8px 0";
-    } catch (e) {}
-
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      try {
-        if (typeof nav === "function") {
-          if (document.getElementById("planner")) nav("planner");
-          else if (document.getElementById("select")) nav("select");
-          else nav("planner");
-        } else {
-          if (document.getElementById("planner")) window.location.hash = "#planner";
-          else if (document.getElementById("select")) window.location.hash = "#select";
-          else window.location.hash = "#planner";
-        }
-      } catch (err) {
-        console.error("Navigation to Main Meals failed", err);
-      }
-    });
-
-    return btn;
-  }
-
-  function copySizingAndVisuals(fromBtn, toBtn) {
-    if (!fromBtn || !toBtn) return;
-    const props = [
-      "display", "width", "min-width", "max-width", "height", "min-height", "max-height",
-      "padding", "padding-top", "padding-right", "padding-bottom", "padding-left",
-      "font-size", "font-weight", "border-radius", "box-sizing", "line-height",
-      "margin", "background-color", "color", "border", "box-shadow", "text-align"
-    ];
-    try {
-      const cs = window.getComputedStyle(fromBtn);
-      props.forEach(p => {
-        const v = cs.getPropertyValue(p);
-        if (v) toBtn.style.setProperty(p, v);
-      });
-      const computedWidth = cs.getPropertyValue("width");
-      if (computedWidth && computedWidth !== "auto") toBtn.style.width = computedWidth;
-      const display = cs.getPropertyValue("display");
-      if (display) toBtn.style.display = display;
-      const box = cs.getPropertyValue("box-sizing");
-      if (box) toBtn.style.boxSizing = box;
-    } catch (e) {
-      try {
-        toBtn.style.padding = "10px 14px";
-        toBtn.style.fontSize = "15px";
-        toBtn.style.borderRadius = "10px";
-        toBtn.style.width = "100%";
-        toBtn.style.boxSizing = "border-box";
-      } catch (err) {}
-    }
-  }
-
-  function findEssentialsButton(shop) {
-    if (!shop) return null;
-    // broadened matching: include many common variants and anchors
-    const candidates = Array.from(shop.querySelectorAll("button, .tool-btn, .btn, a"));
-    const normalized = (el) => ((el.textContent || el.value || "").trim().toLowerCase());
-    const exactMatches = ["essentials","add & select essentials","add & select items","add & select","add essentials","add & select items"];
-    const foundExact = candidates.find(el => exactMatches.includes(normalized(el)));
-    if (foundExact) return foundExact;
-    const fuzzy = candidates.find(el => {
-      const t = normalized(el);
-      return /\b(add|select|essentials|items)\b/.test(t) && t.length < 40;
-    });
-    if (fuzzy) return fuzzy;
-    const visible = candidates.find(el => {
-      const rect = el.getBoundingClientRect();
-      return rect.width > 40 && rect.height > 24;
-    });
-    return visible || null;
-  }
-
-  function findHomeButton(shop) {
-    if (!shop) return null;
-    const byClass = shop.querySelector(".home-btn, #homeBtn, #home");
-    if (byClass) return byClass;
-    const byText = Array.from(shop.querySelectorAll("button, a")).find(el => {
-      const t = (el.textContent || el.value || "").trim().toLowerCase();
-      return t === "home" || t === "home page" || t === "back home";
-    });
-    if (byText) return byText;
-    const candidates = Array.from(shop.querySelectorAll("button, a")).filter(el => {
-      const rect = el.getBoundingClientRect();
-      return rect.width > 20 && rect.height > 20;
-    });
-    return candidates.length ? candidates[0] : null;
-  }
-
-  function insertButton() {
-    const shop = document.getElementById(SHOP_PAGE_ID);
-    if (!shop) return false;
-    if (shop.querySelector(`.${BTN_CLASS}`)) return true;
-    const btn = createButton();
-    const essentialsBtn = findEssentialsButton(shop);
-    if (essentialsBtn) copySizingAndVisuals(essentialsBtn, btn);
-    const homeBtn = findHomeButton(shop);
-    if (homeBtn && homeBtn.parentElement) {
-      if (homeBtn.nextSibling) homeBtn.parentElement.insertBefore(btn, homeBtn.nextSibling);
-      else homeBtn.parentElement.appendChild(btn);
-      return true;
-    }
-    const target = shop.querySelector(ESSENTIALS_SELECTOR);
-    const container = target || shop.querySelector(".essentials-container") || shop;
-    container.insertBefore(btn, target || container.firstChild);
-    return true;
-  }
-
-  insertButton();
-  const observer = new MutationObserver(() => insertButton());
-  observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
-})();
-
-/* ===== Insert slim info box on Add & Select Meals page only (id "planner") ===== */
-(function ensureMealsInfoBoxOnPlannerOnly() {
-  const TARGET_ID = "planner";
-  const INFO_CLASS = "meals-info-box";
-  const INFO_TEXT = "Click on an item below to add or remove in the Shopping List.";
-
-  function createInfoBox() {
-    const box = document.createElement("div");
-    box.className = INFO_CLASS;
-    box.setAttribute("role", "status");
-    box.setAttribute("aria-live", "polite");
-    box.style.width = "100%";
-    box.style.boxSizing = "border-box";
-    box.style.background = "rgba(250,250,250,0.98)";
-    box.style.border = "1px solid rgba(0,0,0,0.06)";
-    box.style.boxShadow = "0 4px 10px rgba(0,0,0,0.04)";
-    box.style.padding = "8px 12px";
-    box.style.borderRadius = "10px";
-    box.style.margin = "10px 0";
-    box.style.textAlign = "center";
-    box.style.fontFamily = "Poppins, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial";
-    box.style.fontSize = "13px";
-    box.style.color = "#333";
-    box.textContent = INFO_TEXT;
-    return box;
-  }
-
-  function findButtonsBlock(pageEl) {
-    const candidates = Array.from(pageEl.querySelectorAll("div, section, header"));
-    for (const c of candidates) {
-      const btns = c.querySelectorAll("button, a, .tool-btn, .btn");
-      if (btns.length >= 2) return c;
-    }
-    return pageEl;
-  }
-
-  function insertInfo() {
-    const targetPage = document.getElementById(TARGET_ID);
-    if (!targetPage) return false;
-    if (targetPage.querySelector(`.${INFO_CLASS}`)) return true;
-    const buttonsBlock = findButtonsBlock(targetPage);
-    const info = createInfoBox();
-    if (buttonsBlock && buttonsBlock !== targetPage) {
-      if (buttonsBlock.nextSibling) buttonsBlock.parentElement.insertBefore(info, buttonsBlock.nextSibling);
-      else buttonsBlock.parentElement.appendChild(info);
-      return true;
-    }
-    const mealContainer = targetPage.querySelector("#mealList, #manualList, .meals-container");
-    if (mealContainer && mealContainer.parentElement) {
-      mealContainer.parentElement.insertBefore(info, mealContainer);
-      return true;
-    }
-    targetPage.insertBefore(info, targetPage.firstChild);
-    return true;
-  }
-
-  insertInfo();
-  const observer = new MutationObserver(() => insertInfo());
-  observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
-})();
-
-/* ===== Insert slim info box on Add & Select Essentials page (id "selectEssentials", fallback "essentials") ===== */
-(function ensureEssentialsInfoBox() {
-  const TARGET_IDS = ["selectEssentials", "essentials"];
-  const INFO_CLASS = "essentials-info-box";
-  const INFO_TEXT = "Click on an item below to add or remove in the Shopping List.";
-
-  function createInfoBox() {
-    const box = document.createElement("div");
-    box.className = INFO_CLASS;
-    box.setAttribute("role", "status");
-    box.setAttribute("aria-live", "polite");
-    box.style.width = "100%";
-    box.style.boxSizing = "border-box";
-    box.style.background = "rgba(250,250,250,0.98)";
-    box.style.border = "1px solid rgba(0,0,0,0.06)";
-    box.style.boxShadow = "0 4px 10px rgba(0,0,0,0.04)";
-    box.style.padding = "8px 12px";
-    box.style.borderRadius = "10px";
-    box.style.margin = "10px 0";
-    box.style.textAlign = "center";
-    box.style.fontFamily = "Poppins, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial";
-    box.style.fontSize = "13px";
-    box.style.color = "#333";
-    box.textContent = INFO_TEXT;
-    return box;
-  }
-
-  function findButtonsBlock(pageEl) {
-    const candidates = Array.from(pageEl.querySelectorAll("div, section, header"));
-    for (const c of candidates) {
-      const btns = c.querySelectorAll("button, a, .tool-btn, .btn");
-      if (btns.length >= 2) return c;
-    }
-    return pageEl;
-  }
-
-  function insertInfo() {
-    let targetPage = null;
-    for (const id of TARGET_IDS) {
-      const el = document.getElementById(id);
-      if (el) { targetPage = el; break; }
-    }
-    if (!targetPage) return false;
-    if (targetPage.querySelector(`.${INFO_CLASS}`)) return true;
-    const buttonsBlock = findButtonsBlock(targetPage);
-    const info = createInfoBox();
-    if (buttonsBlock && buttonsBlock !== targetPage) {
-      if (buttonsBlock.nextSibling) buttonsBlock.parentElement.insertBefore(info, buttonsBlock.nextSibling);
-      else buttonsBlock.parentElement.appendChild(info);
-      return true;
-    }
-    const essentialsContainer = targetPage.querySelector("#essentialSelectList, #essentialsList, .essentials-container");
-    if (essentialsContainer && essentialsContainer.parentElement) {
-      essentialsContainer.parentElement.insertBefore(info, essentialsContainer);
-      return true;
-    }
-    targetPage.insertBefore(info, targetPage.firstChild);
-    return true;
-  }
-
-  insertInfo();
-  const observer = new MutationObserver(() => insertInfo());
-  observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
-})();
-
-/* ===== Robust rename: force "Essentials" label after load and short fallback ===== */
-(function robustEssentialsRename() {
-  function replaceVisibleEssentials() {
-    Array.from(document.querySelectorAll("button, a, .tool-btn, .btn")).forEach(el => {
-      const t = (el.textContent || el.value || "").trim().toLowerCase();
-      if (["add & select essentials","add & select items","add & select","add essentials","add & select items"].includes(t)) {
-        el.textContent = "Essentials";
-      }
-    });
-  }
-
-  // run once after load
-  window.addEventListener("load", () => {
-    try { renameHomeAddButtonScoped(); } catch(e){}
-    replaceVisibleEssentials();
+/* ===== UI ensures consolidated under one observer ===== */
+function ensurePlannerControls() {
+  const planner = document.getElementById("planner");
+  if (!planner) return;
+  const addBtn = Array.from(planner.querySelectorAll("button, .btn")).find(el => {
+    const t = (el.textContent || el.value || "").trim();
+    return /^\+?\s*Add Meal$/i.test(t);
   });
+  if (addBtn) styleButton(addBtn);
+  // Intentionally do not add a Shopping List button on planner.
+}
 
-  // short fallback: run a few times to catch scripts that overwrite labels later
-  let attempts = 0;
-  const maxAttempts = 6;
-  const interval = setInterval(() => {
-    replaceVisibleEssentials();
-    attempts++;
-    if (attempts >= maxAttempts) clearInterval(interval);
-  }, 500);
-})();
+function ensureInfoBoxes() {
+  const planner = document.getElementById("planner");
+  if (planner && !planner.querySelector(".slim-info-box")) {
+    const mealContainer = planner.querySelector("#mealList, .meals-container");
+    const info = createInfoBox("Click on an item below to add or remove in the Shopping List.");
+    if (mealContainer && mealContainer.parentElement) mealContainer.parentElement.insertBefore(info, mealContainer);
+    else planner.insertBefore(info, planner.firstChild);
+  }
+  const ess = document.getElementById("selectEssentials") || document.getElementById("essentials");
+  if (ess && !ess.querySelector(".slim-info-box")) {
+    const essentialsContainer = ess.querySelector("#essentialSelectList, #essentialsList, .essentials-container");
+    const info = createInfoBox("Click on an item below to add or remove in the Shopping List.");
+    if (essentialsContainer && essentialsContainer.parentElement) essentialsContainer.parentElement.insertBefore(info, essentialsContainer);
+    else ess.insertBefore(info, ess.firstChild);
+  }
+}
+
+/* ===== Single MutationObserver to keep UI in sync ===== */
+const uiObserver = new MutationObserver((mutations) => {
+  ensurePlannerControls();
+  ensureInfoBoxes();
+  normalizeLabels();
+});
+
+function startObserver() {
+  uiObserver.observe(document.documentElement || document.body, { childList: true, subtree: true });
+}
 
 /* ===== Init on load ===== */
 window.addEventListener("load", () => {
   bindElements();
-  // ensure rename runs (also covered by robustEssentialsRename)
-  try { renameHomeAddButtonScoped(); } catch(e){}
+  normalizeLabels();
   renderMeals();
-  renderManualList();
+  // renderManualList removed
   renderEssentials();
   renderEssentialSelectList();
   renderShoppingList();
   mirror(["meals","plan","essentials","manualEssentials","manualSelected","clearedShopping","checkedShopping","planSnapshot"]);
+  startObserver();
 });

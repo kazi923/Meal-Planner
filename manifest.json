@@ -1,11 +1,11 @@
 {
   "name": "Meal Planner",
-  "short_name": "MealPlanner",
+  "short_name": "Meals",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#7BC47F",
-  "orientation": "portrait",
+  "background_color": "#006994",
+  "theme_color": "#006994",
+  "description": "Meal planner with recipes, essentials, and shopping list.",
   "icons": [
     {
       "src": "icons/icon-192.png",

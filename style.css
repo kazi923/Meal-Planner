@@ -47,6 +47,15 @@ h2{
   color:#fff;
 }
 
+/* Shared button-row layout used on planner and selectEssentials */
+.button-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
 /* Make the "+ Add Meal" button on the Meal Planner page slightly narrower */
 #planner .button-row .btn[onclick^="addMeal"] {
   max-width:220px;
