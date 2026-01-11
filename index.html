@@ -3,13 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-
   <title>Meal Planner</title>
-
-  <!-- PWA additions -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#006994">
-
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -46,14 +40,17 @@
   <h2>Add & Select Essentials</h2>
   <button class="btn theme-ocean" onclick="nav('home')">Home</button>
 
+  <!-- Add essentials input -->
   <div class="inputs" style="margin-top:12px;">
     <input id="essentialItem" placeholder="Item (e.g. Milk, Bread, Coffee)"/>
   </div>
 
+  <!-- Buttons: only add essential (Shopping List button removed) -->
   <div class="button-row" style="margin-top:10px;">
     <button class="btn theme-ocean" onclick="addEssential()">+ Add Essential</button>
   </div>
 
+  <!-- Select essentials list (click to toggle selection) -->
   <div id="essentialSelectList" style="margin-top:14px;"></div>
 </div>
 
@@ -74,13 +71,5 @@
 
 <script src="storage.js"></script>
 <script src="app.js"></script>
-
-<!-- Service Worker Registration -->
-<script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js");
-  }
-</script>
-
 </body>
 </html>

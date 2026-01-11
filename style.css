@@ -177,6 +177,13 @@ h2{
   text-overflow: ellipsis;
 }
 
+/* ✅ THE FIX YOU REQUESTED — moves buttons below meal name */
+.meal-card {
+  display: flex;
+  flex-direction: column;   /* forces vertical stacking */
+  align-items: flex-start;  /* keeps everything left aligned */
+}
+
 @media (max-width: 420px) {
   .meal-card .recipe { font-size: 12px; }
   .btn, .tool-btn { padding: 8px 10px; font-size: 14px; }
